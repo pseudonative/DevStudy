@@ -195,10 +195,10 @@ You've hit kubia-8xvqb
 
 # Optonal - check to make sure pod svc rc removed before using YAML 
 
-kdel all --all
-kg po --all-namespaces
-kg svc --all-namespaces
-kg rc --all-namespaces
+# kdel all --all
+# kg po --all-namespaces
+# kg svc --all-namespaces
+# kg rc --all-namespaces
 
 # create pod via YAML get in the habbit of using namespaces
 
@@ -248,10 +248,12 @@ NAME              READY   STATUS    RESTARTS   AGE
 kubia-manual      1/1     Running   0          42m
 kubia-manual-v2   1/1     Running   0          3s
 
+
 ➜  yaml_files git:(master) ✗ kg po --show-labels
 NAME              READY   STATUS    RESTARTS   AGE   LABELS
 kubia-manual      1/1     Running   0          42m   <none>
 kubia-manual-v2   1/1     Running   0          23s   creation_method=manual,env=prod
+
 
 ➜  yaml_files git:(master) ✗ k get po -L creation_method,env
 NAME              READY   STATUS    RESTARTS   AGE    CREATION_METHOD   ENV
@@ -260,11 +262,14 @@ kubia-manual-v2   1/1     Running   0          2m8s   manual            prod
 kubia-sw7cq       1/1     Running   0          28s    
 
 
+
 ➜  yaml_files git:(master) ✗ k label po kubia-manual creation_method=manual
 pod/kubia-manual labeled
 
+
 ➜  yaml_files git:(master) ✗ k label po kubia-manual-v2 env=debug --overwrite 
 pod/kubia-manual-v2 labeled
+
 
 ➜  yaml_files git:(master) ✗ kg po -L creation_method,env
 NAME              READY   STATUS    RESTARTS   AGE     CREATION_METHOD   ENV
@@ -278,6 +283,8 @@ NAME              READY   STATUS    RESTARTS   AGE
 kubia-manual      1/1     Running   0          56m
 kubia-manual-v2   1/1     Running   0          14m
 ➜  yaml_files git:(master) ✗    
+
+
 ➜  yaml_files git:(master) ✗ kg po -l env
 NAME              READY   STATUS    RESTARTS   AGE
 kubia-manual-v2   1/1     Running   0          14m
@@ -287,15 +294,45 @@ NAME           READY   STATUS    RESTARTS   AGE
 kubia-manual   1/1     Running   0          57m
 kubia-sw7cq    1/1     Running   0          14m
 
+# Label a Node
+
+❯ kg no          
+NAME                                   STATUS   ROLES    AGE   VERSION
+gke-kubia-default-pool-75d2dcc5-32vf   Ready    <none>   37m   v1.14.10-gke.27
+gke-kubia-default-pool-75d2dcc5-kq4k   Ready    <none>   37m   v1.14.10-gke.27
+gke-kubia-default-pool-75d2dcc5-n7nd   Ready    <none>   37m   v1.14.10-gke.27
+~/kubernetes_in_action/yaml_files                                                                                               ○ kubia
+
+
+❯ k label node gke-kubia-default-pool-75d2dcc5-kq4k gpu=true
+node/gke-kubia-default-pool-75d2dcc5-kq4k labeled
+~/kubernetes_in_action/yaml_files                                                                                               ○ kubia
+
+
+❯ kg no -l gpu=true
+NAME                                   STATUS   ROLES    AGE   VERSION
+gke-kubia-default-pool-75d2dcc5-kq4k   Ready    <none>   38m   v1.14.10-gke.27
+~/kubernetes_in_action/yaml_files                                                                                               ○ kubia
+
+
+❯ kg no -L gpu=true
+NAME                                   STATUS   ROLES    AGE   VERSION           GPU=TRUE
+gke-kubia-default-pool-75d2dcc5-32vf   Ready    <none>   38m   v1.14.10-gke.27   
+gke-kubia-default-pool-75d2dcc5-kq4k   Ready    <none>   38m   v1.14.10-gke.27   
+gke-kubia-default-pool-75d2dcc5-n7nd   Ready    <none>   38m   v1.14.10-gke.27   
+
+
+
 
 ➜  yaml_files git:(master) ✗ k create -f kubia-gpu.yaml -n default
 pod/kubia-gpu created
-➜  yaml_files git:(master) ✗ kg po
+
+
+❯ kg po
 NAME              READY   STATUS    RESTARTS   AGE
-kubia-gpu         0/1     Pending   0          3s  # no nodes had the gpu true set
-kubia-manual      1/1     Running   0          61m
-kubia-manual-v2   1/1     Running   0          19m
-kubia-sw7cq       1/1     Running   0          17m
+kubia-2mjcz       1/1     Running   0          22m
+kubia-gpu         1/1     Running   0          3s
+.......
 
 
 ➜  yaml_files git:(master) ✗ k annotate po kubia-manual mycompany.com/someannotation="BadAss Shoshone"
