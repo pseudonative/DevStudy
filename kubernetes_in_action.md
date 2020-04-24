@@ -50,6 +50,8 @@ kubia-8xvqb   1/1     Running   0          3m5s    10.4.1.19   gke-chaos-default
 kubia-p9982   1/1     Running   0          7m14s   10.4.1.18   gke-chaos-default-pool-57deedda-0q0n   <none>           <none>
 kubia-vqdk4   1/1     Running   0          3m5s    10.4.2.5    gke-chaos-default-pool-57deedda-0gdt   <none>           <none>
 
+
+
 kg po -oyaml
 kd po 
 kd po | more
@@ -438,6 +440,7 @@ service "kubernetes" deleted
 ➜  yaml_files git:(master) ✗ kg po
 No resources found in default namespace.
 
+### Delete everything and move on
 
 #
 
