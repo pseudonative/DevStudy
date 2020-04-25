@@ -34,7 +34,27 @@ kubectl describe <node name>
 
 # deploy a pod via kubectl run
 
-kubectl run kubia --image=luksa/kubia --port=8080 --generator=run/v1
+k create -f  replicationController.yaml -n default
+
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: kubia
+spec:
+  replicas: 1
+  selector:
+    app: kubia
+  template:
+    metadata:
+      name: kubia
+      labels:
+        app: kubia
+    spec:
+      containers:
+      - name: kubia
+        image: luksa/kubia
+        ports:
+        - containerPort: 8080%                   
 
 # in another terminal window
 
@@ -329,6 +349,16 @@ gke-kubia-default-pool-75d2dcc5-n7nd   Ready    <none>   38m   v1.14.10-gke.27
 ➜  yaml_files git:(master) ✗ k create -f kubia-gpu.yaml -n default
 pod/kubia-gpu created
 
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: kubia-gpu
+spec:
+  nodeSelector:
+    gpu: "true"
+  containers:
+    - image: luksa/kubia
+      name: kubia 
 
 ❯ kg po
 NAME              READY   STATUS    RESTARTS   AGE
@@ -381,6 +411,11 @@ stackdriver-metadata-agent-cluster-level-744c9bbf67-d25wg   2/2     Running   0 
 
 ➜  yaml_files git:(master) ✗ k create -f  custome-namespace.yaml
 namespace/custom-namespace created
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: custom-namespace% 
 
 ➜  yaml_files git:(master) ✗ kg ns
 NAME               STATUS   AGE
@@ -442,9 +477,779 @@ No resources found in default namespace.
 
 ### Delete everything and move on
 
-#
 
-# Testing from coandodev to merge with pseudonative
+# create POD with liveness probe
+
+k create -f kubia-liveness-probe.yaml -n default
+
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: kubia-liveness
+spec:
+  containers:
+    - name: kubia
+      image: luksa/kubia-unhealthy
+      livenessProbe:
+          httpGet:
+            path: / 
+            port: 8080 
+
+          
+          
+          
+➜  yaml_files git:(master) ✗ kg po
+NAME             READY   STATUS    RESTARTS   AGE
+kubia-liveness   1/1     Running   0          89s
+  
+
+
+kd po
+  Warning  Unhealthy  1s (x2 over 11s)  kubelet, gke-jaykube-default-pool-5886fede-bqds  Liveness probe failed: HTTP probe failed with statuscode: 500
+
+
+
+➜  yaml_files git:(master) ✗ kg po
+NAME             READY   STATUS    RESTARTS   AGE
+kubia-liveness   1/1     Running   1          2m35s  <===== RESTARTS
+
+
+
+➜  yaml_files git:(master) ✗ k logs kubia-liveness --previous 
+Kubia server starting...
+Received request from ::ffff:10.48.2.1
+Received request from ::ffff:10.48.2.1
+Received request from ::ffff:10.48.2.1
+Received request from ::ffff:10.48.2.1
+Received request from ::ffff:10.48.2.1
+Received request from ::ffff:10.48.2.1
+Received request from ::ffff:10.48.2.1
+Received request from ::ffff:10.48.2.1
+
+
+
+  yaml_files git:(master) ✗ kd po kubia-liveness | grep -Ei "last state" | awk '{print $1 "  " $2 " "  $3 "    " $4}'        
+Last  State: Terminated    
+➜  yaml_files git:(master) ✗ kd po kubia-liveness | grep -Ei reason: | awk '{print $1 "  " $2 }'             
+Reason:  Error
+
+
+
+✗ k apply -f  kubia-liveness-probe-initial-delay.yaml -n default
+
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: kubia-liveness
+spec:
+  containers:
+    - name: kubia
+      image: luksa/kubia-unhealthy
+      livenessProbe:
+          httpGet:
+            path: / 
+            port: 8080 
+          initialDelaySeconds: 15
+            
+
+➜  yaml_files git:(master) ✗ kg po
+NAME             READY   STATUS             RESTARTS   AGE
+kubia-liveness   0/1     CrashLoopBackOff   6          13m
+
+Delete the POD and recreate
+
+
+✗ k create -f  kubia-liveness-probe-initial-delay.yaml -n default
+
+
+✗ kg po
+NAME             READY   STATUS    RESTARTS   AGE
+kubia-liveness   1/1     Running   0          10s
+
+
+
+  yaml_files git:(master) ✗ kd po | grep -Ei liveness
+Name:         kubia-liveness
+    Liveness:     http-get http://:8080/ delay=15s timeout=1s period=10s #success=1 #failure=3
+  Normal   Scheduled  2m                 default-scheduler                                Successfully assigned default/kubia-liveness to gke-jaykube-default-pool-5886fede-bqds
+  Warning  Unhealthy  29s (x3 over 49s)  kubelet, gke-jaykube-default-pool-5886fede-bqds  Liveness probe failed: HTTP probe failed with statuscode: 500
+  Normal   Killing    29s                kubelet, gke-jaykube-default-pool-5886fede-bqds  Container kubia failed liveness probe, will be restarted
+
+
+# Create Replica Controller 
+
+k create -f  kubia-rc.yaml -n default
+
+apiVersion: v1
+kind: ReplicationController 
+metadata:
+  name: kubia
+spec:
+  replicas: 3
+  selector:
+    app: kubia 
+  template:
+    metadata:
+      labels: 
+        app: kubia 
+    spec:
+      containers:
+        - name: kubia
+          image: luksa/kubia
+          ports:
+          - containerPort: 8080
+
+
+➜  yaml_files git:(master) ✗ kg rc
+NAME    DESIRED   CURRENT   READY   AGE
+kubia   3         3         3       59s
+
+
+
+➜  yaml_files git:(master) ✗ kg po
+NAME             READY   STATUS    RESTARTS   AGE
+kubia-24j2q      1/1     Running   0          4s
+kubia-dcq2c      1/1     Running   0          4s
+kubia-liveness   1/1     Running   3          6m37s
+kubia-wbqxk      1/1     Running   0          4s
+
+
+
+➜  yaml_files git:(master) ✗ kdel po kubia-24j2q kubia-wbqxk
+pod "kubia-24j2q" deleted
+pod "kubia-wbqxk" deleted
+
+
+
+➜  DevStudy git:(master) ✗ kg po 
+NAME             READY   STATUS              RESTARTS   AGE
+kubia-24j2q      1/1     Terminating         0          115s
+kubia-dcq2c      1/1     Running             0          115s
+kubia-jhqw5      1/1     Running             0          2s
+kubia-lhfmf      0/1     ContainerCreating   0          2s
+kubia-liveness   1/1     Running             4          8m28s
+kubia-wbqxk      1/1     Terminating         0          115s
+
+
+
+  DevStudy git:(master) ✗ kg po
+NAME             READY   STATUS    RESTARTS   AGE
+kubia-dcq2c      1/1     Running   0          3m8s
+kubia-jhqw5      1/1     Running   0          75s
+kubia-lhfmf      1/1     Running   0          75s
+kubia-liveness   1/1     Running   4          9m41s
+
+
+
+# Introduce some Chaos - take down a node
+
+➜  yaml_files git:(master) ✗ gcloud compute ssh gke-jaykube-default-pool-5886fede-bqds
+
+
+jeremy@gke-jaykube-default-pool-5886fede-bqds ~ $ sudo ifconfig eth0 down
+
+
+➜  DevStudy git:(master) ✗ kg no
+NAME                                     STATUS     ROLES    AGE   VERSION
+gke-jaykube-default-pool-5886fede-bqds   NotReady   <none>   72m   v1.14.10-gke.27
+
+
+
+➜  DevStudy git:(master) ✗ kg no
+NAME                                     STATUS     ROLES    AGE   VERSION
+gke-jaykube-default-pool-5886fede-bqds   Ready      <none>   82m   v1.14.10-gke.27
+gke-jaykube-default-pool-5886fede-ggs1   Ready      <none>   82m   v1.14.10-gke.27
+gke-jaykube-default-pool-5886fede-s8nn   NotReady   <none>   82m   v1.14.10-gke.27
+
+
+
+  DevStudy git:(master) ✗ kg po
+NAME             READY   STATUS              RESTARTS   AGE
+kubia-bpv67      0/1     ContainerCreating   0          2s
+kubia-dcq2c      1/1     Running             2          22m
+kubia-jhqw5      1/1     Running             2          20m
+kubia-lhfmf      1/1     Unknown             0          20m
+kubia-liveness   1/1     Running             11         28m
+
+
+
+➜  ~ gcloud compute instances reset gke-jaykube-default-pool-5886fede-s8nn
+
+➜  DevStudy git:(master) ✗ kg no
+NAME                                     STATUS   ROLES    AGE   VERSION
+gke-jaykube-default-pool-5886fede-bqds   Ready    <none>   89m   v1.14.10-gke.27
+gke-jaykube-default-pool-5886fede-ggs1   Ready    <none>   89m   v1.14.10-gke.27
+gke-jaykube-default-pool-5886fede-s8nn   Ready    <none>   89m   v1.14.10-gke.27
+
+
+
+# Add labels to PODs managed by Replication Controller
+
+➜  ~ k label po kubia-dcq2c type=special
+pod/kubia-dcq2c labeled
+
+
+
+➜  ~ kg po --show-labels
+NAME             READY   STATUS    RESTARTS   AGE     LABELS
+kubia-bpv67      1/1     Running   0          6m28s   app=kubia
+kubia-dcq2c      1/1     Running   2          28m     app=kubia,type=special
+kubia-jhqw5      1/1     Running   2          26m     app=kubia
+kubia-liveness   1/1     Running   13         35m     <none>
+
+
+
+➜  ~ k label po kubia-dcq2c app=foo --overwrite
+pod/kubia-dcq2c labeled
+
+
+
+➜  ~ kg po -L app
+NAME             READY   STATUS    RESTARTS   AGE     APP
+kubia-bpv67      1/1     Running   0          7m43s   kubia
+kubia-dcq2c      1/1     Running   2          30m     foo
+kubia-jhqw5      1/1     Running   2          28m     kubia
+kubia-liveness   1/1     Running   13         36m     
+kubia-s4jtm      1/1     Running   0          10s     kubia
+➜  ~ 
+
+
+# Horizontially scale the Replica Set
+
+➜  ~ k scale rc kubia --replicas=10 
+replicationcontroller/kubia scaled
+➜  ~ kg rc
+NAME    DESIRED   CURRENT   READY   AGE
+kubia   10        10        6       33m
+
+
+
+➜  ~ k edit rc kubia  # can also scale - k scale rc kubia --replicas=3
+
+spec:
+  replicas: 3  
+
+
+➜  ~ kg rc
+NAME    DESIRED   CURRENT   READY   AGE
+kubia   3         3         3       35m
+➜  ~ kg po
+NAME             READY   STATUS        RESTARTS   AGE
+kubia-bpv67      1/1     Running       0          13m
+kubia-dcq2c      1/1     Running       2          35m
+kubia-gvfwb      1/1     Terminating   0          119s
+kubia-jhqw5      1/1     Running       2          33m
+kubia-liveness   1/1     Running       14         42m
+kubia-qg62l      1/1     Terminating   0          119s
+kubia-s4jtm      1/1     Running       0          5m46s
+kubia-sbmzk      1/1     Terminating   0          119s
+kubia-tfjnt      1/1     Terminating   0          119s
+kubia-tq7dd      1/1     Terminating   0          119s
+kubia-v65ks      1/1     Terminating   0          119s
+kubia-zznqt      1/1     Terminating   0          119s
+
+
+
+➜  ~ kdel rc kubia --cascade=false
+replicationcontroller "kubia" deleted
+➜  ~ kg rc
+No resources found in default namespace.
+➜  ~ kg po
+NAME          READY   STATUS    RESTARTS   AGE
+kubia-bpv67   1/1     Running   0          16m
+kubia-dcq2c   1/1     Running   2          38m
+kubia-jhqw5   1/1     Running   2          37m
+kubia-s4jtm   1/1     Running   0          9m5s
+
+
+# Create Replica Set to adopt orphaned PODs
+
+➜  ~ k create -f kubia-replicaset.yaml -n default
+replicaset.apps/kubia created
+
+apiVersion: apps/v1beta2
+kind: ReplicaSet
+metadata:
+  name: kubia
+spec:
+  replicas: 3 
+  selector:
+    matchLabels: 
+      app: kubia 
+  template:
+    metadata:
+      labels:
+        app: kubia 
+    spec:
+      containers:
+        - name: kubia 
+          image: luksa/kubia
+
+
+➜  ~ kg rs
+NAME    DESIRED   CURRENT   READY   AGE
+kubia   3         3         3       41s
+
+
+➜  ~ kd rs
+Name:         kubia
+Namespace:    default
+Selector:     app=kubia
+Labels:       <none>
+Annotations:  <none>
+Replicas:     3 current / 3 desired
+Pods Status:  3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=kubia
+
+
+# Add expressive Label Selectors to Replica Set
+
+➜  ~ kdel rs kubia
+replicaset.extensions "kubia" deleted
+
+
+➜  ~ k create -f kubia-replicaset-matchexpressions.yaml -n default
+replicaset.apps/kubia created
+
+apiVersion: apps/v1beta2
+kind: ReplicaSet
+metadata:
+  name: kubia
+spec:
+  replicas: 3 
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+        - kubia 
+  template:
+    metadata:
+      labels:
+        app: kubia 
+    spec:
+      containers:
+        - name: kubia 
+          image: luksa/kubia
+
+
+➜  ~ kg po
+NAME          READY   STATUS    RESTARTS   AGE
+kubia-dcq2c   1/1     Running   2          49m
+kubia-gctjt   1/1     Running   0          91s
+kubia-w4zmx   1/1     Running   0          91s
+kubia-wxdqh   1/1     Running   0          91s
+
+
+
+➜  ~ kg po --show-labels
+NAME          READY   STATUS    RESTARTS   AGE   LABELS
+kubia-dcq2c   1/1     Running   2          49m   app=foo,type=special
+kubia-gctjt   1/1     Running   0          99s   app=kubia
+kubia-w4zmx   1/1     Running   0          99s   app=kubia
+kubia-wxdqh   1/1     Running   0          99s   app=kubia
+➜  ~ 
+
+
+
+➜  ~ kdel rs --all
+replicaset.extensions "kubia" deleted
+
+
+# create Node Selector with Daemon set
+
+➜  ~ k create  -f ssd-monitor-daemonset.yaml -n default
+daemonset.apps/ssd-monitor created
+
+apiVersion: apps/v1beta2
+kind: DaemonSet
+metadata:
+  name: ssd-monitor 
+spec:
+  selector:
+    matchLabels:
+      app: ssd-monitor
+  template:
+    metadata:
+      labels:
+        app: ssd-monitor
+    spec:
+      containers:
+        - name: main
+          image: luksa/ssd-monitor 
+      nodeSelector:
+        disk: ssd 
+        
+
+
+➜  ~ kg ds
+NAME          DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+ssd-monitor   0         0         0       0            0           disk=ssd        112s
+
+
+➜  ~ kg po
+No resources found in default namespace.
+➜  ~ 
+
+
+➜  ~ k label node gke-jaykube-default-pool-5886fede-bqds disk=ssd
+node/gke-jaykube-default-pool-5886fede-bqds labeled
+
+
+➜  ~ kg po
+NAME                READY   STATUS    RESTARTS   AGE
+ssd-monitor-khgwh   1/1     Running   0          4s
+➜  ~ 
+
+
+# remove the label from the node
+
+  ~ k label node gke-jaykube-default-pool-5886fede-bqds disk=hdd --overwrite
+node/gke-jaykube-default-pool-5886fede-bqds labeled
+➜  ~ 
+➜  ~ 
+➜  ~ 
+➜  ~ kg po
+NAME                READY   STATUS        RESTARTS   AGE
+ssd-monitor-khgwh   1/1     Terminating   0          109s
+➜  ~ 
+
+
+➜  ~ kg ds
+NAME          DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+ssd-monitor   0         0         0       0            0           disk=ssd        6m39s
+➜  ~ 
+➜  ~ 
+➜  ~ kdel ds ssd-monitor
+daemonset.extensions "ssd-monitor" deleted
+➜  ~ kg po
+No resources found in default namespace.
+➜  ~ 
+
+
+# Define a Job Resource
+
+➜  ~ k create -f  exporter.yaml -n default
+job.batch/batch-job created
+
+
+apiVersion: batch/v1
+kind: Job 
+metadata:
+  name: batch-job 
+spec: 
+  template:
+    metadata:
+      labels:
+        app: batch-job
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: main
+        image: luksa/batch-job
+
+
+➜  ~ kg jobs
+NAME        COMPLETIONS   DURATION   AGE
+batch-job   0/1           22s        22s
+
+
+➜  ~ kg po
+NAME              READY   STATUS    RESTARTS   AGE
+batch-job-mdbc4   1/1     Running   0          62s
+
+
+➜  ~ kg jobs
+NAME        COMPLETIONS   DURATION   AGE
+batch-job   1/1           2m3s       2m23s
+
+
+
+➜  ~ kg po
+NAME              READY   STATUS      RESTARTS   AGE
+batch-job-mdbc4   0/1     Completed   0          2m25s
+
+
+➜  ~ k logs batch-job-mdbc4
+Sat Apr 25 21:03:46 UTC 2020 Batch job starting
+Sat Apr 25 21:05:46 UTC 2020 Finished succesfully
+
+
+
+# Run Jobs in sequentially
+
+➜  ~ k create -f  multi-completion-batch-job.yaml -n default
+job.batch/multi-completion-batch-job created
+
+
+apiVersion: batch/v1
+kind: Job 
+metadata:
+  name: multi-completion-batch-job
+spec: 
+  completions: 5
+  template:
+    metadata:
+      labels:
+        app: batch-job
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: main
+        image: luksa/batch-job
+
+
+
+➜  ~ kg jobs
+NAME                         COMPLETIONS   DURATION   AGE
+batch-job                    1/1           2m3s       6m57s
+multi-completion-batch-job   0/5           21s        21s
+
+
+➜  ~ kg po
+NAME                               READY   STATUS      RESTARTS   AGE
+batch-job-mdbc4                    0/1     Completed   0          7m3s
+multi-completion-batch-job-4s8kc   1/1     Running     0          27s
+
+
+
+➜  ~ kg jobs
+NAME                         COMPLETIONS   DURATION   AGE
+batch-job                    1/1           2m3s       8m54s
+multi-completion-batch-job   1/5           2m18s      2m18s
+
+
+
+➜  ~ kg po
+NAME                               READY   STATUS      RESTARTS   AGE
+batch-job-mdbc4                    0/1     Completed   0          8m58s
+multi-completion-batch-job-4s8kc   0/1     Completed   0          2m22s
+multi-completion-batch-job-9g8f4   1/1     Running     0          20s
+
+
+➜  ~ k logs multi-completion-batch-job-4s8kc
+Sat Apr 25 21:10:22 UTC 2020 Batch job starting
+Sat Apr 25 21:12:22 UTC 2020 Finished succesfully
+➜  ~ 
+
+
+➜  ~ kg jobs
+NAME                         COMPLETIONS   DURATION   AGE
+batch-job                    1/1           2m3s       10m
+multi-completion-batch-job   2/5           4m17s      4m17s
+➜  ~ kg po  
+NAME                               READY   STATUS      RESTARTS   AGE
+batch-job-mdbc4                    0/1     Completed   0          10m
+multi-completion-batch-job-4s8kc   0/1     Completed   0          4m20s
+multi-completion-batch-job-8g844   1/1     Running     0          16s
+multi-completion-batch-job-9g8f4   0/1     Completed   0          2m18s
+➜  ~ 
+
+
+➜  ~ k logs multi-completion-batch-job-9g8f4
+Sat Apr 25 21:12:24 UTC 2020 Batch job starting
+Sat Apr 25 21:14:24 UTC 2020 Finished succesfully
+
+  ~ kg jobs
+NAME                         COMPLETIONS   DURATION   AGE
+batch-job                    1/1           2m3s       15m
+multi-completion-batch-job   4/5           9m         9m
+➜  ~ kg po
+NAME                               READY   STATUS      RESTARTS   AGE
+batch-job-mdbc4                    0/1     Completed   0          15m
+multi-completion-batch-job-4s8kc   0/1     Completed   0          9m2s
+multi-completion-batch-job-8g844   0/1     Completed   0          4m58s
+multi-completion-batch-job-9g8f4   0/1     Completed   0          7m
+multi-completion-batch-job-pbxn8   0/1     Completed   0          2m56s
+multi-completion-batch-job-x6ljh   1/1     Running     0          54s
+
+
+# Run Jobs in Parallel
+
+➜  ~ k create -f multi-completion-parallel-batch-job.yaml -n default
+
+
+apiVersion: batch/v1
+kind: Job 
+metadata:
+  name: multi-completion-parallel-batch-job
+spec: 
+  completions: 5
+  parallelism: 2
+  template:
+    metadata:
+      labels:
+        app: batch-job
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: main
+        image: luksa/batch-job
+
+
+➜  ~ kg jobs
+NAME                                  COMPLETIONS   DURATION   AGE
+batch-job                             1/1           2m3s       19m
+multi-completion-batch-job            5/5           10m        13m
+multi-completion-parallel-batch-job   0/5           4s         4s
+
+
+➜  ~ kg po
+NAME                                        READY   STATUS      RESTARTS   AGE
+batch-job-mdbc4                             0/1     Completed   0          19m
+multi-completion-batch-job-4s8kc            0/1     Completed   0          13m
+multi-completion-batch-job-8g844            0/1     Completed   0          9m4s
+multi-completion-batch-job-9g8f4            0/1     Completed   0          11m
+multi-completion-batch-job-pbxn8            0/1     Completed   0          7m2s
+multi-completion-batch-job-x6ljh            0/1     Completed   0          5m
+multi-completion-parallel-batch-job-4r5jz   1/1     Running     0          8s
+multi-completion-parallel-batch-job-wfxrn   1/1     Running     0          8s
+
+
+
+➜  ~ kg jobs
+NAME                                  COMPLETIONS   DURATION   AGE
+batch-job                             1/1           2m3s       21m
+multi-completion-batch-job            5/5           10m        15m
+multi-completion-parallel-batch-job   2/5           2m4s       2m4s
+
+
+
+➜  ~ kg po  
+NAME                                        READY   STATUS      RESTARTS   AGE
+batch-job-mdbc4                             0/1     Completed   0          21m
+multi-completion-batch-job-4s8kc            0/1     Completed   0          15m
+multi-completion-batch-job-8g844            0/1     Completed   0          11m
+multi-completion-batch-job-9g8f4            0/1     Completed   0          13m
+multi-completion-batch-job-pbxn8            0/1     Completed   0          9m1s
+multi-completion-batch-job-x6ljh            0/1     Completed   0          6m59s
+multi-completion-parallel-batch-job-479ws   1/1     Running     0          3s
+multi-completion-parallel-batch-job-4r5jz   0/1     Completed   0          2m7s
+multi-completion-parallel-batch-job-tr45b   1/1     Running     0          4s
+multi-completion-parallel-batch-job-wfxrn   0/1     Completed   0          2m7s
+➜  ~ 
+
+
+➜  ~ kg jobs
+NAME                                  COMPLETIONS   DURATION   AGE
+batch-job                             1/1           2m3s       25m
+multi-completion-batch-job            5/5           10m        18m
+multi-completion-parallel-batch-job   4/5           5m24s      5m24s
+
+
+
+➜  ~ kg po
+NAME                                        READY   STATUS      RESTARTS   AGE
+batch-job-mdbc4                             0/1     Completed   0          25m
+multi-completion-batch-job-4s8kc            0/1     Completed   0          18m
+multi-completion-batch-job-8g844            0/1     Completed   0          14m
+multi-completion-batch-job-9g8f4            0/1     Completed   0          16m
+multi-completion-batch-job-pbxn8            0/1     Completed   0          12m
+multi-completion-batch-job-x6ljh            0/1     Completed   0          10m
+multi-completion-parallel-batch-job-479ws   0/1     Completed   0          3m22s
+multi-completion-parallel-batch-job-4r5jz   0/1     Completed   0          5m26s
+multi-completion-parallel-batch-job-pvh2b   1/1     Running     0          81s
+multi-completion-parallel-batch-job-tr45b   0/1     Completed   0          3m23s
+multi-completion-parallel-batch-job-wfxrn   0/1     Completed   0          5m26s
+
+
+
+# Set a cron job
+
+➜  ~ k create -f cronjob.yaml -n default
+cronjob.batch/batch-job-every-2-mins created
+
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: batch-job-every-2-mins
+spec:
+  schedule: "36,38,40,42 * * * *"
+  jobTemplate:
+    spec: 
+      template:
+        metadata:
+          labels:
+            app: periodic-batch-job
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: main
+            image: luksa/batch-job
+
+
+➜  ~ kg cronjob
+NAME                     SCHEDULE              SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+batch-job-every-2-mins   36,38,40,42 * * * *   False     0        <none>          70s
+
+
+
+➜  ~ kg cronjob
+NAME                     SCHEDULE              SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+batch-job-every-2-mins   36,38,40,42 * * * *   False     1        15s             50s
+
+
+
+➜  ~ kg po     
+NAME                                      READY   STATUS    RESTARTS   AGE
+batch-job-every-2-mins-1587850680-7s968   1/1     Running   0          9s
+
+
+➜  ~ kg cronjob
+NAME                     SCHEDULE              SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+batch-job-every-2-mins   36,38,40,42 * * * *   False     2        9s              2m44s
+
+
+➜  ~ kg po     
+NAME                                      READY   STATUS    RESTARTS   AGE
+batch-job-every-2-mins-1587850680-7s968   1/1     Running   0          2m2s
+batch-job-every-2-mins-1587850800-r97k8   1/1     Running   0          11s
+➜  ~ 
+
+
+# Cron Job with deadline
+
+➜  yaml_files git:(master) ✗ k create -f cronjob_deadline.yaml -n default
+cronjob.batch/batch-job-every-2-mins-deadline created
+
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: batch-job-every-2-mins-deadline
+spec:
+  schedule: "36,38,40,42,44,46,48 * * * *"
+  startingDeadlineSeconds: 15
+  jobTemplate:
+    spec: 
+      template:
+        metadata:
+          labels:
+            app: periodic-batch-job
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: main
+            image: luksa/batch-job
+
+
+➜  ~ kg cronjob
+NAME                              SCHEDULE                       SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+batch-job-every-2-mins            36,38,40,42 * * * *            False     0        6m5s            10m
+batch-job-every-2-mins-deadline   36,38,40,42,44,46,48 * * * *   False     2        5s              4m2s
+
+
+
+➜  ~ kg po
+NAME                                               READY   STATUS      RESTARTS   AGE
+batch-job-every-2-mins-deadline-1587851160-57fws   0/1     Completed   0          2m10s
+batch-job-every-2-mins-deadline-1587851280-tvl4l   1/1     Running     0          9s
+
+
+
+
 
 
 
