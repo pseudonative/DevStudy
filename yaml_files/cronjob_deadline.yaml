@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: batch-job-every-2-mins-deadline
 spec:
-  schedule: "36,38,40,42,44,46,48 * * * *"
+  schedule: "22,24,26,28,30,32,34 * * * *"
   startingDeadlineSeconds: 15
   jobTemplate:
     spec: 

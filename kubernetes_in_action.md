@@ -533,9 +533,9 @@ Last  State: Terminated
 ➜  yaml_files git:(master) ✗ kd po kubia-liveness | grep -Ei reason: | awk '{print $1 "  " $2 }'             
 Reason:  Error
 
+kdel po --all
 
-
-✗ k apply -f  kubia-liveness-probe-initial-delay.yaml -n default
+✗ k create -f  kubia-liveness-probe-initial-delay.yaml -n default
 
 apiVersion: v1
 kind: Pod 
@@ -556,7 +556,7 @@ spec:
 NAME             READY   STATUS             RESTARTS   AGE
 kubia-liveness   0/1     CrashLoopBackOff   6          13m
 
-Delete the POD and recreate
+# Delete the POD and recreate with the delay
 
 
 ✗ k create -f  kubia-liveness-probe-initial-delay.yaml -n default
@@ -977,7 +977,7 @@ Sat Apr 25 21:05:46 UTC 2020 Finished succesfully
 
 
 
-# Run Jobs in sequentially
+# Run Jobs in sequentially - This is optional if you have the time if not go to parallel
 
 ➜  ~ k create -f  multi-completion-batch-job.yaml -n default
 job.batch/multi-completion-batch-job created
@@ -1155,7 +1155,7 @@ multi-completion-parallel-batch-job-wfxrn   0/1     Completed   0          5m26s
 
 
 
-# Set a cron job
+# Set a cron job - to save time can skip to cronjob with deadline
 
 ➜  ~ k create -f cronjob.yaml -n default
 cronjob.batch/batch-job-every-2-mins created
@@ -1247,8 +1247,10 @@ NAME                                               READY   STATUS      RESTARTS 
 batch-job-every-2-mins-deadline-1587851160-57fws   0/1     Completed   0          2m10s
 batch-job-every-2-mins-deadline-1587851280-tvl4l   1/1     Running     0          9s
 
-THIS IS JUST A TEST TO practice fetching
 
+❯ kdel cronjob --all
+cronjob.batch "batch-job-every-2-mins-deadline" deleted
+~                                                
 
 
 
