@@ -14,7 +14,25 @@ kubectl config get-clusters
 
 kubectl config use-cluster <cluster name>
 
-gcloud container clusters create <name> --machine-type=MACHINE_TYPE   # f1-micro
+# GCS Cluster
+gcloud container clusters create <name> --machine-type=MACHINE_TYPE   # n1-standard-1
+
+# EKS Cluster
+eksctl create cluster -f /home/jeremy/AWS_EKS/eksctl/eks-course.yaml 
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: jaykube
+  region: us-east-1
+nodeGroups:
+  - name: ng-1
+    instanceType: t2.small
+    desiredCapacity: 3
+    ssh: 
+      publicKeyName: eks-course
+
+
 
 # after cluster is built or if built on another workstation
 
@@ -64,6 +82,8 @@ kg po --watch
 
 kg po 
 kg po -owide
+kg po <name> -owide
+
 ➜  kubernetes_in_action git:(master) ✗ kg po -owide
 NAME          READY   STATUS    RESTARTS   AGE     IP          NODE                                   NOMINATED NODE   READINESS GATES
 kubia-8xvqb   1/1     Running   0          3m5s    10.4.1.19   gke-chaos-default-pool-57deedda-0q0n   <none>           <none>
@@ -265,6 +285,23 @@ You've hit kubia-manual
 ➜  yaml_files git:(master) ✗ k create -f  kubia-manual-with-labels.yaml -n default
 pod/kubia-manual-v2 created
 
+apiVersion: v1
+kind: Pod 
+metadata: 
+  name: kubia-manual-v2
+  labels:
+    creation_method: manual 
+    env: prod 
+spec:
+  containers:
+    - image: luksa/kubia
+      name: kubia 
+      ports:
+      - containerPort: 8080 
+        protocol: TCP
+
+
+
 ➜  yaml_files git:(master) ✗ kg po
 NAME              READY   STATUS    RESTARTS   AGE
 kubia-manual      1/1     Running   0          42m
@@ -335,13 +372,6 @@ node/gke-kubia-default-pool-75d2dcc5-kq4k labeled
 NAME                                   STATUS   ROLES    AGE   VERSION
 gke-kubia-default-pool-75d2dcc5-kq4k   Ready    <none>   38m   v1.14.10-gke.27
 ~/kubernetes_in_action/yaml_files                                                                                               ○ kubia
-
-
-❯ kg no -L gpu=true
-NAME                                   STATUS   ROLES    AGE   VERSION           GPU=TRUE
-gke-kubia-default-pool-75d2dcc5-32vf   Ready    <none>   38m   v1.14.10-gke.27   
-gke-kubia-default-pool-75d2dcc5-kq4k   Ready    <none>   38m   v1.14.10-gke.27   
-gke-kubia-default-pool-75d2dcc5-n7nd   Ready    <none>   38m   v1.14.10-gke.27   
 
 
 
@@ -893,6 +923,8 @@ No resources found in default namespace.
 ➜  ~ 
 
 
+k label node <node>  disk=ssd  # make a script to automate
+
 ➜  ~ k label node gke-jaykube-default-pool-5886fede-bqds disk=ssd
 node/gke-jaykube-default-pool-5886fede-bqds labeled
 
@@ -1251,6 +1283,420 @@ batch-job-every-2-mins-deadline-1587851280-tvl4l   1/1     Running     0        
 ❯ kdel cronjob --all
 cronjob.batch "batch-job-every-2-mins-deadline" deleted
 ~                                                
+
+# Create a Service with YAML
+
+k create -f  kubia-svc.yaml -n default
+service/kubia created
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubia
+spec: 
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: kubia
+
+kg svc
+NAME         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.100.0.1       <none>        443/TCP   85m
+kubia        ClusterIP   10.100.142.125   <none>        80/TCP    103s
+
+
+ k exec kubia-5xjrb -- curl -s http://10.100.142.125
+You've hit kubia-rkht6
+
+
+# Need PODS to work with - k create -f kubia-replicaset.yaml -n default
+
+kdel po --all
+pod "kubia-9s4q7" deleted
+pod "kubia-f9xf7" deleted
+pod "kubia-jkgr8" deleted
+
+
+
+               kg po
+NAME          READY   STATUS    RESTARTS   AGE
+kubia-6sgfs   1/1     Running   0          38s
+kubia-lpfbr   1/1     Running   0          38s
+kubia-rtgc9   1/1     Running   0          38s
+
+
+
+k exec kubia-6sgfs env
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+HOSTNAME=kubia-6sgfs
+KUBERNETES_SERVICE_PORT=443
+KUBERNETES_PORT_443_TCP=tcp://10.100.0.1:443
+KUBIA_SERVICE_HOST=10.100.90.188
+KUBIA_SERVICE_PORT=80
+KUBIA_PORT_80_TCP_PROTO=tcp
+KUBERNETES_PORT=tcp://10.100.0.1:443
+KUBERNETES_PORT_443_TCP_PORT=443
+KUBIA_PORT_80_TCP_PORT=80
+KUBERNETES_SERVICE_HOST=10.100.0.1
+KUBERNETES_PORT_443_TCP_PROTO=tcp
+KUBERNETES_PORT_443_TCP_ADDR=10.100.0.1
+KUBERNETES_SERVICE_PORT_HTTPS=443
+KUBIA_PORT=tcp://10.100.90.188:80
+KUBIA_PORT_80_TCP=tcp://10.100.90.188:80
+KUBIA_PORT_80_TCP_ADDR=10.100.90.188
+
+
+k exec -it kubia-6sgfs bash
+
+root@kubia-6sgfs:/# curl http://kubia.default.svc.cluster.local
+You've hit kubia-lpfbr
+
+root@kubia-6sgfs:/# curl http://kubia.default
+You've hit kubia-rtgc9
+
+root@kubia-6sgfs:/# curl http://kubia        
+You've hit kubia-lpfbr
+
+root@kubia-6sgfs:/# curl http://kubia        
+You've hit kubia-lpfbr
+root@kubia-6sgfs:/# 
+root@kubia-6sgfs:/# 
+root@kubia-6sgfs:/# 
+root@kubia-6sgfs:/# cat /etc/resolv.conf 
+nameserver 10.100.0.10
+search default.svc.cluster.local svc.cluster.local cluster.local ec2.internal
+options ndots:5
+
+
+kd svc kubia
+Name:              kubia
+Namespace:         default
+Labels:            <none>
+Annotations:       <none>
+Selector:          app=kubia   <====== Pod Selctor
+Type:              ClusterIP
+IP:                10.100.90.188
+Port:              <unset>  80/TCP
+TargetPort:        8080/TCP
+Endpoints:         192.168.26.253:8080,192.168.37.227:8080,192.168.58.188:8080  <====== Pod endpoints
+Session Affinity:  None
+Events:            <none>
+
+
+kg endpoints kubia
+NAME    ENDPOINTS                                                     AGE
+kubia   192.168.26.253:8080,192.168.37.227:8080,192.168.58.188:8080   8m8s
+
+
+
+
+
+# Service NodePort 
+
+k create -f  kubia-svc-nodeport.yaml -n default
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubia-nodeport
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30123
+  selector:
+    app: kubia
+
+### for GCS ==> gcloud compute firewall-rules create kubia-svc-rule --allow=tcp:30123
+### for AWS ==> edit the security group - port-range 30123  0.0.0.0/0
+
+kg svc kubia-nodeport
+NAME             TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+kubia-nodeport   NodePort   10.100.137.248   <none>        80:30123/TCP   3m22s
+
+
+kg no -o jsonpath='{.items[*].status.addresses[?(@.type=="ExternalIP")].address}'
+54.85.96.174 3.234.222.45 18.206.81.24
+
+
+[jeremy@eks_course kube_yaml_files]$ curl -v -k 54.85.96.174:30123
+* About to connect() to 54.85.96.174 port 30123 (#0)
+*   Trying 54.85.96.174...
+* Connected to 54.85.96.174 (54.85.96.174) port 30123 (#0)
+> GET / HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: 54.85.96.174:30123
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Date: Wed, 06 May 2020 20:23:17 GMT
+< Connection: keep-alive
+< Transfer-Encoding: chunked
+< 
+You've hit kubia-mkzk8
+* Connection #0 to host 54.85.96.174 left intact
+[jeremy@eks_course kube_yaml_files]$ curl  3.234.222.45:30123
+You've hit kubia-dc47q
+
+
+
+
+
+# Create LoadBalancer Service
+
+k create -f kubia-svc-loadbalancer.yaml
+service/kubia-loadbalancer created
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubia-loadbalancer
+spec: 
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: kubia
+
+
+kg svc kubia-loadbalancer
+NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP                                                               PORT(S)        AGE
+kubia-loadbalancer   LoadBalancer   10.100.49.66   a0171468c8fdd11eabf3112b4bd47f1f-1966275983.us-east-1.elb.amazonaws.com   80:30231/TCP   43s
+
+
+curl a0171468c8fdd11eabf3112b4bd47f1f-1966275983.us-east-1.elb.amazonaws.com
+You've hit kubia-mkzk8
+
+
+curl a0171468c8fdd11eabf3112b4bd47f1f-1966275983.us-east-1.elb.amazonaws.com
+You've hit kubia-hw6cl
+
+
+
+# Create an INgress resource
+
+k create -f kubia-ingress.yaml -n default
+ingress.extensions/kubia created
+
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kubia
+spec:
+  rules:
+  - host: kubia.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kubia-nodeport
+          servicePort: 80
+
+
+
+kg ingresses
+NAME    HOSTS               ADDRESS   PORTS   AGE
+kubia   kubia.example.com             80      36s
+
+❯ kg ingresses
+NAME    HOSTS               ADDRESS          PORTS   AGE
+kubia   kubia.example.com   35.244.178.129   80      112s
+
+
+ cat /etc/hosts
+
+localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+192.168.122.35          kube-master.jeremycoando.com    m1
+192.168.122.32          kube-slave1.jeremycoando.com    s1
+192.168.122.5		kube-slave2.jeremycoando.com	s2
+10.0.0.110		devops_server.example.com	dev
+
+35.244.178.129 		kubia.example.com
+~                                                                                                                                      
+❯ curl http://kubia.example.com
+You've hit kubia-gpl58
+~                                                   
+
+
+### TLS Traffic  
+
+❯ openssl genrsa -out tls.key 2048
+Generating RSA private key, 2048 bit long modulus
+........................................................................................................................................+++
+................................+++
+e is 65537 (0x10001)
+~                                                                                                                                      
+❯ openssl req -new -x509 -key tls.key -out tls.cert -days 360 -subj /CN=kubia.example.com
+~                          
+
+
+❯ k create secret tls tls-secret --cert=tls.cert --key=tls.key
+secret/tls-secret created
+
+
+❯ kg secrets tls-secret
+NAME         TYPE                DATA   AGE
+tls-secret   kubernetes.io/tls   2      22s
+~                                                                                                                               ○ kubia
+❯ kd secrets tls-secret
+Name:         tls-secret
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  kubernetes.io/tls
+
+Data
+====
+tls.crt:  1115 bytes
+tls.key:  1675 bytes
+~                          
+
+❯ curl -k -v https://kubia.example.com/     
+* About to connect() to kubia.example.com port 443 (#0)
+*   Trying 35.244.178.129...
+* Connected to kubia.example.com (35.244.178.129) port 443 (#0)
+* Initializing NSS with certpath: sql:/etc/pki/nssdb
+* skipping SSL peer certificate verification
+* SSL connection using TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+* Server certificate:
+* 	subject: CN=kubia.example.com
+* 	start date: May 06 23:42:45 2020 GMT
+* 	expire date: May 01 23:42:45 2021 GMT
+* 	common name: kubia.example.com
+* 	issuer: CN=kubia.example.com
+> GET / HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: kubia.example.com
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Date: Wed, 06 May 2020 23:54:18 GMT
+< Transfer-Encoding: chunked
+< Via: 1.1 google
+< Alt-Svc: clear
+< 
+You've hit kubia-gpl58
+
+
+# Readiness Probe - Need LB svc kubia-svc-loadbalancer.yaml
+
+k  apply -f kubia-rc-probe.yaml
+
+apiVersion: v1
+kind: ReplicationController 
+metadata:
+  name: kubia
+spec:
+  replicas: 3
+  selector:
+    app: kubia 
+  template:
+    metadata:
+      labels: 
+        app: kubia 
+    spec:
+      containers:
+        - name: kubia
+          image: luksa/kubia
+          readinessProbe:
+            exec:
+              command:
+              - ls 
+              - /var/ready
+          ports:
+          - containerPort: 8080
+
+
+❯ kg po
+NAME          READY   STATUS    RESTARTS   AGE
+kubia-khtmc   0/1     Running   0          4m19s
+kubia-nhchf   0/1     Running   0          4m19s
+kubia-vfxgp   0/1     Running   0          4m19s
+~                                                                                                                               ○ kubia
+❯ k exec kubia-t45qw -- touch /var/ready
+~                                                                                                                               ○ kubia
+❯ kg po
+NAME          READY   STATUS    RESTARTS   AGE
+kubia-8v989   0/1     Running   0          69s
+kubia-gm99d   0/1     Running   0          69s
+kubia-t45qw   0/1     Running   0          69s
+~                                                                                                                               ○ kubia
+❯ kg po
+NAME          READY   STATUS    RESTARTS   AGE
+kubia-8v989   0/1     Running   0          72s
+kubia-gm99d   0/1     Running   0          72s
+kubia-t45qw   1/1     Running   0          72s
+~                         
+
+
+❯ curl http://35.232.120.106
+You've hit kubia-t45qw
+~                                                                                                                                      
+❯ curl http://35.232.120.106
+You've hit kubia-t45qw
+~                                                                                                                                      
+❯ curl http://35.232.120.106
+You've hit kubia-t45qw
+~                                                                                                                                      
+❯ curl http://35.232.120.106
+You've hit kubia-t45qw
+~                                                                                                                                      
+❯ curl http://35.232.120.106
+You've hit kubia-t45qw
+~                   
+
+
+# Create a Headless Service
+
+k create -f kubia-svc-headless.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubia-headless
+spec:
+  clusterIP: None
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: kubia 
+    
+
+❯ k run dnsutils --image=tutum/dnsutils --generator=run-pod/v1 --command -- sleep infinity
+pod/dnsutils created
+
+
+❯ k exec dnsutils nslookup kubia-headless
+Server:		10.55.240.10
+Address:	10.55.240.10#53
+
+Name:	kubia-headless.default.svc.cluster.local
+Address: 10.52.0.14
+Name:	kubia-headless.default.svc.cluster.local
+Address: 10.52.1.9
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
