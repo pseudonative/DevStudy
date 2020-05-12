@@ -20,7 +20,7 @@ gcloud container clusters create <name> --machine-type=MACHINE_TYPE   # n1-stand
 # EKS Cluster
 eksctl create cluster -f /home/jeremy/AWS_EKS/eksctl/eks-course.yaml 
 
-apiVersion: eksctl.io/v1alpha5
+<!-- apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 metadata:
   name: jaykube
@@ -30,7 +30,7 @@ nodeGroups:
     instanceType: t2.small
     desiredCapacity: 3
     ssh: 
-      publicKeyName: eks-course
+      publicKeyName: eks-course -->
 
 
 
@@ -54,7 +54,7 @@ kubectl describe <node name>
 
 k create -f  replicationController.yaml -n default
 
-apiVersion: v1
+<!-- apiVersion: v1
 kind: ReplicationController
 metadata:
   name: kubia
@@ -72,7 +72,7 @@ spec:
       - name: kubia
         image: luksa/kubia
         ports:
-        - containerPort: 8080%                   
+        - containerPort: 8080%                    -->
 
 # in another terminal window
 
@@ -245,7 +245,7 @@ You've hit kubia-8xvqb
 # create pod via YAML get in the habbit of using namespaces
 
 k create -f kubia-manual.yaml -n default
-
+<!-- 
 apiVersion: v1
 kind: Pod 
 metadata:
@@ -256,7 +256,7 @@ spec:
     name: kubia 
     ports:
     - containerPort: 8080
-      protocol: TCP%            
+      protocol: TCP%             -->
 
 kg po -oyaml
 
@@ -284,7 +284,7 @@ You've hit kubia-manual
 
 ➜  yaml_files git:(master) ✗ k create -f  kubia-manual-with-labels.yaml -n default
 pod/kubia-manual-v2 created
-
+<!-- 
 apiVersion: v1
 kind: Pod 
 metadata: 
@@ -299,7 +299,7 @@ spec:
       ports:
       - containerPort: 8080 
         protocol: TCP
-
+ -->
 
 
 ➜  yaml_files git:(master) ✗ kg po
@@ -378,7 +378,7 @@ gke-kubia-default-pool-75d2dcc5-kq4k   Ready    <none>   38m   v1.14.10-gke.27
 
 ➜  yaml_files git:(master) ✗ k create -f kubia-gpu.yaml -n default
 pod/kubia-gpu created
-
+<!-- 
 apiVersion: v1
 kind: Pod 
 metadata:
@@ -388,7 +388,7 @@ spec:
     gpu: "true"
   containers:
     - image: luksa/kubia
-      name: kubia 
+      name: kubia  -->
 
 ❯ kg po
 NAME              READY   STATUS    RESTARTS   AGE
@@ -441,7 +441,7 @@ stackdriver-metadata-agent-cluster-level-744c9bbf67-d25wg   2/2     Running   0 
 
 ➜  yaml_files git:(master) ✗ k create -f  custome-namespace.yaml
 namespace/custom-namespace created
-
+<!-- 
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -453,7 +453,7 @@ custom-namespace   Active   3s
 default            Active   2d1h
 kube-node-lease    Active   2d1h
 kube-public        Active   2d1h
-kube-system        Active   2d1h
+kube-system        Active   2d1h -->
 
 
 ➜  yaml_files git:(master) ✗ k create -f kubia-manual.yaml -n custom-namespace
@@ -511,7 +511,7 @@ No resources found in default namespace.
 # create POD with liveness probe
 
 k create -f kubia-liveness-probe.yaml -n default
-
+<!-- 
 apiVersion: v1
 kind: Pod 
 metadata:
@@ -525,7 +525,7 @@ spec:
             path: / 
             port: 8080 
 
-          
+           -->
           
           
 ➜  yaml_files git:(master) ✗ kg po
@@ -566,7 +566,7 @@ Reason:  Error
 kdel po --all
 
 ✗ k create -f  kubia-liveness-probe-initial-delay.yaml -n default
-
+<!-- 
 apiVersion: v1
 kind: Pod 
 metadata:
@@ -580,7 +580,7 @@ spec:
             path: / 
             port: 8080 
           initialDelaySeconds: 15
-            
+             -->
 
 ➜  yaml_files git:(master) ✗ kg po
 NAME             READY   STATUS             RESTARTS   AGE
@@ -609,7 +609,7 @@ Name:         kubia-liveness
 # Create Replica Controller 
 
 k create -f  kubia-rc.yaml -n default
-
+<!-- 
 apiVersion: v1
 kind: ReplicationController 
 metadata:
@@ -627,7 +627,7 @@ spec:
         - name: kubia
           image: luksa/kubia
           ports:
-          - containerPort: 8080
+          - containerPort: 8080 -->
 
 
 ➜  yaml_files git:(master) ✗ kg rc
@@ -796,7 +796,7 @@ kubia-s4jtm   1/1     Running   0          9m5s
 
 ➜  ~ k create -f kubia-replicaset.yaml -n default
 replicaset.apps/kubia created
-
+<!-- 
 apiVersion: apps/v1beta2
 kind: ReplicaSet
 metadata:
@@ -814,7 +814,7 @@ spec:
       containers:
         - name: kubia 
           image: luksa/kubia
-
+ -->
 
 ➜  ~ kg rs
 NAME    DESIRED   CURRENT   READY   AGE
@@ -841,7 +841,7 @@ replicaset.extensions "kubia" deleted
 
 ➜  ~ k create -f kubia-replicaset-matchexpressions.yaml -n default
 replicaset.apps/kubia created
-
+<!-- 
 apiVersion: apps/v1beta2
 kind: ReplicaSet
 metadata:
@@ -861,7 +861,7 @@ spec:
     spec:
       containers:
         - name: kubia 
-          image: luksa/kubia
+          image: luksa/kubia -->
 
 
 ➜  ~ kg po
@@ -891,7 +891,7 @@ replicaset.extensions "kubia" deleted
 
 ➜  ~ k create  -f ssd-monitor-daemonset.yaml -n default
 daemonset.apps/ssd-monitor created
-
+<!-- 
 apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
@@ -910,7 +910,7 @@ spec:
           image: luksa/ssd-monitor 
       nodeSelector:
         disk: ssd 
-        
+         -->
 
 
 ➜  ~ kg ds
@@ -965,7 +965,7 @@ No resources found in default namespace.
 ➜  ~ k create -f  exporter.yaml -n default
 job.batch/batch-job created
 
-
+<!-- 
 apiVersion: batch/v1
 kind: Job 
 metadata:
@@ -980,7 +980,7 @@ spec:
       containers:
       - name: main
         image: luksa/batch-job
-
+ -->
 
 ➜  ~ kg jobs
 NAME        COMPLETIONS   DURATION   AGE
@@ -1013,7 +1013,7 @@ Sat Apr 25 21:05:46 UTC 2020 Finished succesfully
 
 ➜  ~ k create -f  multi-completion-batch-job.yaml -n default
 job.batch/multi-completion-batch-job created
-
+<!-- 
 
 apiVersion: batch/v1
 kind: Job 
@@ -1030,7 +1030,7 @@ spec:
       containers:
       - name: main
         image: luksa/batch-job
-
+ -->
 
 
 ➜  ~ kg jobs
@@ -1101,7 +1101,7 @@ multi-completion-batch-job-x6ljh   1/1     Running     0          54s
 
 ➜  ~ k create -f multi-completion-parallel-batch-job.yaml -n default
 
-
+<!-- 
 apiVersion: batch/v1
 kind: Job 
 metadata:
@@ -1118,7 +1118,7 @@ spec:
       containers:
       - name: main
         image: luksa/batch-job
-
+ -->
 
 ➜  ~ kg jobs
 NAME                                  COMPLETIONS   DURATION   AGE
@@ -1192,7 +1192,7 @@ multi-completion-parallel-batch-job-wfxrn   0/1     Completed   0          5m26s
 ➜  ~ k create -f cronjob.yaml -n default
 cronjob.batch/batch-job-every-2-mins created
 
-
+<!-- 
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -1210,7 +1210,7 @@ spec:
           containers:
           - name: main
             image: luksa/batch-job
-
+ -->
 
 ➜  ~ kg cronjob
 NAME                     SCHEDULE              SUSPEND   ACTIVE   LAST SCHEDULE   AGE
@@ -1245,7 +1245,7 @@ batch-job-every-2-mins-1587850800-r97k8   1/1     Running   0          11s
 
 ➜  yaml_files git:(master) ✗ k create -f cronjob_deadline.yaml -n default
 cronjob.batch/batch-job-every-2-mins-deadline created
-
+<!-- 
 
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -1265,7 +1265,7 @@ spec:
           containers:
           - name: main
             image: luksa/batch-job
-
+ -->
 
 ➜  ~ kg cronjob
 NAME                              SCHEDULE                       SUSPEND   ACTIVE   LAST SCHEDULE   AGE
@@ -1289,7 +1289,7 @@ cronjob.batch "batch-job-every-2-mins-deadline" deleted
 k create -f  kubia-svc.yaml -n default
 service/kubia created
 
-
+<!-- 
 apiVersion: v1
 kind: Service
 metadata:
@@ -1299,7 +1299,7 @@ spec:
   - port: 80
     targetPort: 8080
   selector:
-    app: kubia
+    app: kubia -->
 
 kg svc
 NAME         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
@@ -1320,7 +1320,7 @@ pod "kubia-jkgr8" deleted
 
 
 
-               kg po
+kg po
 NAME          READY   STATUS    RESTARTS   AGE
 kubia-6sgfs   1/1     Running   0          38s
 kubia-lpfbr   1/1     Running   0          38s
@@ -1397,7 +1397,7 @@ kubia   192.168.26.253:8080,192.168.37.227:8080,192.168.58.188:8080   8m8s
 # Service NodePort 
 
 k create -f  kubia-svc-nodeport.yaml -n default
-
+<!-- 
 apiVersion: v1
 kind: Service
 metadata:
@@ -1409,7 +1409,7 @@ spec:
     targetPort: 8080
     nodePort: 30123
   selector:
-    app: kubia
+    app: kubia -->
 
 ### for GCS ==> gcloud compute firewall-rules create kubia-svc-rule --allow=tcp:30123
 ### for AWS ==> edit the security group - port-range 30123  0.0.0.0/0
@@ -1451,7 +1451,7 @@ You've hit kubia-dc47q
 k create -f kubia-svc-loadbalancer.yaml
 service/kubia-loadbalancer created
 
-
+<!-- 
 apiVersion: v1
 kind: Service
 metadata:
@@ -1462,7 +1462,7 @@ spec:
   - port: 80
     targetPort: 8080
   selector:
-    app: kubia
+    app: kubia -->
 
 
 kg svc kubia-loadbalancer
@@ -1483,7 +1483,7 @@ You've hit kubia-hw6cl
 
 k create -f kubia-ingress.yaml -n default
 ingress.extensions/kubia created
-
+<!-- 
 
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -1497,7 +1497,7 @@ spec:
       - path: /
         backend:
           serviceName: kubia-nodeport
-          servicePort: 80
+          servicePort: 80 -->
 
 
 
@@ -1508,6 +1508,9 @@ kubia   kubia.example.com             80      36s
 ❯ kg ingresses
 NAME    HOSTS               ADDRESS          PORTS   AGE
 kubia   kubia.example.com   35.244.178.129   80      112s
+
+
+kdel po --all
 
 
  cat /etc/hosts
@@ -1528,6 +1531,17 @@ You've hit kubia-gpl58
 
 
 ### TLS Traffic  
+❯ kdel ingress kubia            
+ingress.extensions "kubia" deleted
+
+❯ k create -f kubia-ingress-tls.yaml 
+ingress.extensions/kubia created
+
+❯ kdel po --all
+pod "kubia-5w88g" deleted
+pod "kubia-bx6mx" deleted
+pod "kubia-tkqnc" deleted
+
 
 ❯ openssl genrsa -out tls.key 2048
 Generating RSA private key, 2048 bit long modulus
@@ -1591,11 +1605,11 @@ You've hit kubia-gpl58
 # Readiness Probe - Need LB svc kubia-svc-loadbalancer.yaml
 
 k  apply -f kubia-rc-probe.yaml
-
+<!-- 
 apiVersion: v1
 kind: ReplicationController 
 metadata:
-  name: kubia
+  name: kubia-probe
 spec:
   replicas: 3
   selector:
@@ -1614,52 +1628,44 @@ spec:
               - ls 
               - /var/ready
           ports:
-          - containerPort: 8080
+          - containerPort: 8080 -->
 
 
 ❯ kg po
 NAME          READY   STATUS    RESTARTS   AGE
-kubia-khtmc   0/1     Running   0          4m19s
-kubia-nhchf   0/1     Running   0          4m19s
-kubia-vfxgp   0/1     Running   0          4m19s
+kubia-probe-492tl                                  0/1     Running     0          5s
+kubia-probe-4mpgj                                  0/1     Running     0          5s
+kubia-probe-np7zb                                  0/1     Running     0          5s
+
+~                                                                                                                               ○ 
+
+
+❯ k exec kubia-probe-492tl -- touch /var/ready
 ~                                                                                                                               ○ kubia
-❯ k exec kubia-t45qw -- touch /var/ready
-~                                                                                                                               ○ kubia
+
+                                                                                                   ○ kubia
 ❯ kg po
 NAME          READY   STATUS    RESTARTS   AGE
-kubia-8v989   0/1     Running   0          69s
-kubia-gm99d   0/1     Running   0          69s
-kubia-t45qw   0/1     Running   0          69s
-~                                                                                                                               ○ kubia
-❯ kg po
-NAME          READY   STATUS    RESTARTS   AGE
-kubia-8v989   0/1     Running   0          72s
-kubia-gm99d   0/1     Running   0          72s
-kubia-t45qw   1/1     Running   0          72s
+kubia-probe-492tl                                  1/1     Running     0          118s
+kubia-probe-4mpgj                                  0/1     Running     0          118s
+kubia-probe-np7zb                                  0/1     Running     0          118s
+
 ~                         
 
-
-❯ curl http://35.232.120.106
-You've hit kubia-t45qw
-~                                                                                                                                      
-❯ curl http://35.232.120.106
-You've hit kubia-t45qw
-~                                                                                                                                      
-❯ curl http://35.232.120.106
-You've hit kubia-t45qw
-~                                                                                                                                      
-❯ curl http://35.232.120.106
-You've hit kubia-t45qw
-~                                                                                                                                      
-❯ curl http://35.232.120.106
-You've hit kubia-t45qw
-~                   
+~/Documents/Juniper_JUNOS                                                                                                              
+❯ curl http://35.223.159.242
+You've hit kubia-probe-492tl
+~/Documents/Juniper_JUNOS                                                                                                              
+❯ curl http://35.223.159.242
+You've hit kubia-probe-492tl
+~/Documents/Juniper_JUNOS                                                                                                              
+❯ 
 
 
 # Create a Headless Service
 
 k create -f kubia-svc-headless.yaml
-
+<!-- 
 apiVersion: v1
 kind: Service
 metadata:
@@ -1671,7 +1677,7 @@ spec:
     targetPort: 8080
   selector:
     app: kubia 
-    
+     -->
 
 ❯ k run dnsutils --image=tutum/dnsutils --generator=run-pod/v1 --command -- sleep infinity
 pod/dnsutils created
@@ -1685,6 +1691,618 @@ Name:	kubia-headless.default.svc.cluster.local
 Address: 10.52.0.14
 Name:	kubia-headless.default.svc.cluster.local
 Address: 10.52.1.9
+
+
+# kdel all --all
+
+
+# PV's and PVC's
+
+❯ k create -f  fortune-pod.yaml -n default
+pod/fortune created
+
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fortune
+spec:
+  containers:
+  - image: luksa/fortune
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html 
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {} -->
+
+
+k port-forward fortune 8888:80
+Forwarding from 127.0.0.1:8888 -> 80
+Forwarding from [::1]:8888 -> 80
+Handling connection for 8888
+
+
+❯ curl -I -v  http://localhost:8888
+* About to connect() to localhost port 8888 (#0)
+*   Trying ::1...
+* Connected to localhost (::1) port 8888 (#0)
+> HEAD / HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: localhost:8888
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+< Server: nginx/1.17.10
+Server: nginx/1.17.10
+< Date: Tue, 12 May 2020 13:54:25 GMT
+Date: Tue, 12 May 2020 13:54:25 GMT
+< Content-Type: text/html
+Content-Type: text/html
+< Content-Length: 94
+Content-Length: 94
+< Last-Modified: Tue, 12 May 2020 13:54:20 GMT
+Last-Modified: Tue, 12 May 2020 13:54:20 GMT
+< Connection: keep-alive
+Connection: keep-alive
+< ETag: "5ebaaa8c-5e"
+ETag: "5ebaaa8c-5e"
+< Accept-Ranges: bytes
+Accept-Ranges: bytes
+
+
+❯ curl http://localhost:8888 
+Excellent day to have a rotten day.
+
+
+# create a Pod with Git Repo
+
+k create -f gitrepo-volume-pod.yaml -n default
+pod/gitrepot-volume-pod created
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gitrepot-volume-pod
+spec:
+  containers:
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html 
+    gitRepo: 
+      repository: https://github.com/pseudonative/kubia-website-example.git
+      revision: master 
+      directory: . -->
+
+k port-forward gitrepot-volume-pod 8888:80
+Forwarding from 127.0.0.1:8888 -> 80
+Forwarding from [::1]:8888 -> 80
+Handling connection for 8888
+
+
+❯ curl localhost:8888
+<html>
+<body>
+Hello there. This is Jeremy's gitVolume.
+This is a second check the first haddt https twice
+This is the Third Tiime.
+</body>
+</html>
+~                                                                                                                                      
+❯ 
+
+Also Try it in a web browser
+
+
+# Examining System Pods
+
+❯ kg po -n kube-system | grep -Ei fluentd
+fluentd-gcp-scaler-bfd6cf8dd-r4ztj                         1/1     Running   0          16h
+fluentd-gcp-v3.1.1-27q5s                                   2/2     Running   0          16h
+fluentd-gcp-v3.1.1-kr7q6                                   2/2     Running   0          16h
+fluentd-gcp-v3.1.1-mqnt2                                   2/2     Running   0          16h
+
+
+❯ kd po fluentd-gcp-v3.1.1-kr7q6 -n kube-system  
+
+Volumes:
+  varrun:
+    Type:          HostPath (bare host directory volume)
+    Path:          /var/run/google-fluentd
+    HostPathType:  
+  varlog:
+    Type:          HostPath (bare host directory volume)
+    Path:          /var/log
+    HostPathType:  
+  varlibdockercontainers:
+    Type:          HostPath (bare host directory volume)
+    Path:          /var/lib/docker/containers
+    HostPathType:  
+  config-volume:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      fluentd-gcp-config-v1.2.6
+    Optional:  false
+  fluentd-gcp-token-cx4jz:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  fluentd-gcp-token-cx4jz
+    Optional:    false
+
+
+
+# Using GCE Persistent Disk pod Volume
+
+❯ gcloud container clusters list
+NAME     LOCATION       MASTER_VERSION  MASTER_IP     MACHINE_TYPE   NODE_VERSION    NUM_NODES  STATUS
+jaykube  us-central1-a  1.14.10-gke.27  34.69.76.133  n1-standard-1  1.14.10-gke.27  3          RUNNING
+~                                                                                                            
+
+
+❯ gcloud compute disks create --size=1Gib --zone=us-central1-a mongodb
+
+NAME     ZONE           SIZE_GB  TYPE         STATUS
+mongodb  us-central1-a  1        pd-standard  READY
+
+New disks are unformatted. You must format and mount a disk before it
+can be used. You can find instructions on how to do this at:
+
+https://cloud.google.com/compute/docs/disks/add-persistent-disk#formatting
+
+~                                                                                                                3s G kubernetes-222302
+❯ gcloud compute disks list
+NAME                                    LOCATION       LOCATION_SCOPE  SIZE_GB  TYPE         STATUS
+gke-jaykube-default-pool-6124d961-6lcw  us-central1-a  zone            100      pd-standard  READY
+gke-jaykube-default-pool-6124d961-8jt9  us-central1-a  zone            100      pd-standard  READY
+gke-jaykube-default-pool-6124d961-v28l  us-central1-a  zone            100      pd-standard  READY
+mongodb                                 us-central1-a  zone            1        pd-standard  READY
+~             
+
+
+k create -f  mongodb-pod-gecpd.yaml -n default
+pod/mongodb created
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongodb 
+spec:
+  volumes:
+  - name: mongodb-data
+    gcePersistentDisk:
+      pdName: mongodb
+      fsType: ext4 
+  containers:
+  - image: mongo 
+    name: mongodb
+    volumeMounts:
+    - name: mongodb-data 
+      mountPath: /data/db 
+    ports:
+    - containerPort: 27017
+      protocol: TCP
+       -->
+
+k exec -it mongodb mongo
+---
+
+> use mystore
+switched to db mystore
+> db.foo.insert({name:'MuthaFucka'})
+WriteResult({ "nInserted" : 1 })
+> db.foo.find()
+{ "_id" : ObjectId("5ebab197b580b2b9869acc7f"), "name" : "MuthaFucka" }
+> 
+
+
+❯ kdel po mongodb
+pod "mongodb" deleted
+~                     
+
+
+k create -f  mongodb-pod-gecpd.yaml -n default
+
+❯ k exec -it mongodb mongo
+MongoDB shell version v4.2.6
+
+---
+
+> use mystore
+switched to db mystore
+> db.foo.find()
+{ "_id" : ObjectId("5ebab197b580b2b9869acc7f"), "name" : "MuthaFucka" }
+> 
+bye
+~                          
+
+
+# Create a pv - Persistent Volume
+
+k create -f  mongodb-pv-gcepd.yaml -n default
+persistentvolume/mongodb-pv created
+
+<!-- 
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongodb-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+  - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain 
+  gcePersistentDisk:
+    pdName: mongodb
+    fsType: ext4
+     -->
+
+kg pv
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+mongodb-pv   1Gi        RWO,ROX        Retain           Available                                   28s
+~                                    
+
+# Create the pvc - Persistent Volume Claim
+
+k create -f  mongodb-pvc.yaml
+persistentvolumeclaim/mongodb-pvc created
+<!-- 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc 
+spec:
+  resources:
+    requests:
+      storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ""
+
+
+   -->
+kg pvc
+NAME          STATUS   VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mongodb-pvc   Bound    mongodb-pv   1Gi        RWO,ROX                       39s
+~                     
+
+kg pv
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                 STORAGECLASS   REASON   AGE
+mongodb-pv   1Gi        RWO,ROX        Retain           Bound    default/mongodb-pvc                           4m59s
+~                                              
+
+
+# Use a Persistent Volume Claim in a Pod
+
+kdel po mongodb
+
+k create -f  mongodb-pod-pvc.yaml -n default
+pod/mongodb created
+
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongodb
+spec:
+  containers:
+  - image: mongo
+    name: mongodb
+    volumeMounts:
+    - name: mongodb-data 
+      mountPath: /data/db 
+    ports:
+    - containerPort: 27017
+      protocol: TCP
+  volumes:
+  - name: mongodb-data
+    persistentVolumeClaim:
+      claimName: mongodb-pvc -->
+
+
+k exec -it mongodb mongo
+MongoDB shell version v4.2.6
+
+---
+
+> use mystore
+switched to db mystore
+> db.foo.find()
+{ "_id" : ObjectId("5ebab197b580b2b9869acc7f"), "name" : "MuthaFucka" }
+> 
+bye
+~                                  
+
+
+# Recycle Persistent Volumes
+
+❯ kdel po mongodb
+pod "mongodb" deleted
+~                                                                                                                          4s ○ jaykube
+❯ kdel pvc mongodb-pvc
+persistentvolumeclaim "mongodb-pvc" deleted
+~                 
+
+
+k create -f  mongodb-pod-pvc.yaml -n default
+pod/mongodb created
+
+
+❯ k create -f  mongodb-pvc.yaml
+persistentvolumeclaim/mongodb-pvc created
+                                                                                          ○ jaykube
+❯ k create -f  mongodb-pod-pvc.yaml -n default
+pod/mongodb created
+                                                                                               
+❯ 
+
+
+❯ kg pvc
+NAME          STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mongodb-pvc   Pending                                                     42s
+~                                                                                                                             ○ jaykube
+❯ kg pv
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS     CLAIM                 STORAGECLASS   REASON   AGE
+mongodb-pv   1Gi        RWO,ROX        Retain           Released   default/mongodb-pvc                           14m
+~                   
+
+
+❯ kdel po mongodb
+pod "mongodb" deleted
+~                                                                                                                             ○ jaykube
+❯ kdel pvc --all
+persistentvolumeclaim "mongodb-pvc" deleted
+~                                                                                                                             ○ jaykube
+❯ kdel pv --all
+persistentvolume "mongodb-pv" deleted
+~                                                                                                                                      
+❯ 
+
+
+❯ k create -f  mongodb-pv-gcepd.yaml -n default
+persistentvolume/mongodb-pv created
+                                                               ○ jaykube
+❯ k create -f  mongodb-pvc.yaml                
+persistentvolumeclaim/mongodb-pvc created
+                                                                              ○ jaykube
+❯ k create -f  mongodb-pod-pvc.yaml -n default 
+pod/mongodb created
+                                                                  
+❯ 
+
+
+❯ kg pv
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                 STORAGECLASS   REASON   AGE
+mongodb-pv   1Gi        RWO,ROX        Retain           Bound    default/mongodb-pvc                           52s
+~                                                                                                                             ○ jaykube
+❯ kg pvc
+NAME          STATUS   VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mongodb-pvc   Bound    mongodb-pv   1Gi        RWO,ROX                       45s
+~                                                                                                                                      
+❯ 
+
+k exec -it mongodb mongo
+---
+
+> use mystore
+switched to db mystore
+> db.foo.find()
+{ "_id" : ObjectId("5ebab197b580b2b9869acc7f"), "name" : "MuthaFucka" }
+> 
+> 
+bye
+~                          
+
+
+# Define a storage class
+
+kdel po mongodb
+
+❯ kdel pv --all
+persistentvolume "mongodb-pv" deleted
+
+❯ kdel pvc --all
+persistentvolumeclaim "mongodb-pvc" deleted
+
+                                                                                       ○ jaykube
+❯ kg pvc
+NAME          STATUS        VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mongodb-pvc   Terminating   mongodb-pv   1Gi        RWO,ROX                       37m
+                                                                                                    
+❯ 
+
+k create -f storageclass-fast-gcepd.yaml -n default
+storageclass.storage.k8s.io/fast created
+<!-- 
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+  zone: us-central1-a
+ -->
+
+
+❯ kg storageclass fast
+NAME   PROVISIONER            AGE
+fast   kubernetes.io/gce-pd   46s
+~                           
+
+
+k create -f  mongodb-pvc-dp.yaml -n default
+persistentvolumeclaim/mongodb-pvc created
+<!-- 
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: 
+  name: mongodb-pvc 
+spec:
+  storageClassName: fast 
+  resources:
+    requests:
+      storage: 100Mi 
+  accessModes:
+    - ReadWriteOnce
+ -->
+
+    ❯ kg pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                 STORAGECLASS   REASON   AGE
+pvc-31c34e07-9466-11ea-be15-42010a80010e   1Gi        RWO            Delete           Bound    default/mongodb-pvc   fast                    31s
+~                                                                                                                             ○ jaykube
+
+
+❯ kg pvc
+NAME          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mongodb-pvc   Bound    pvc-31c34e07-9466-11ea-be15-42010a80010e   1Gi        RWO            fast           35s
+~             
+
+
+ gcloud compute disks list | grep -Ei pd-ssd
+gke-jaykube-9c1a0a79-d-pvc-31c34e07-9466-11ea-be15-42010a80010e  us-central1-a  zone            1        pd-ssd       READY
+~       
+
+
+
+❯ kg sc
+NAME                 PROVISIONER            AGE
+fast                 kubernetes.io/gce-pd   7m51s
+standard (default)   kubernetes.io/gce-pd   17h
+~    
+
+
+# Create Persistent Volume withou specifying storage class
+
+❯ kg sc standard -oyaml
+allowVolumeExpansion: true
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  creationTimestamp: "2020-05-11T21:50:33Z"
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+    kubernetes.io/cluster-service: "true"
+  name: standard
+  resourceVersion: "304"
+  selfLink: /apis/storage.k8s.io/v1/storageclasses/standard
+  uid: 705c43ff-93d1-11ea-be15-42010a80010e
+parameters:
+  type: pd-standard
+provisioner: kubernetes.io/gce-pd
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+~                      
+
+
+k create -f  mongodb-pvc-dp-nostorageclass.yaml -n default
+persistentvolumeclaim/mongodb-pvc2 created
+
+
+<!-- apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc2 
+spec: 
+  resources:
+    requests:
+      storage: 10Mi
+  accessModes:
+  - ReadWriteOnce 
+  -->
+  
+❯ kg pvc mongodb-pvc2
+NAME           STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mongodb-pvc2   Bound    pvc-3479b215-9467-11ea-be15-42010a80010e   1Gi        RWO            standard       6m26s
+~                                                                                                                             ○ jaykube
+
+
+❯ kg pv pvc-3479b215-9467-11ea-be15-42010a80010e
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                  STORAGECLASS   REASON   AGE
+pvc-3479b215-9467-11ea-be15-42010a80010e   1Gi        RWO            Delete           Bound    default/mongodb-pvc2   standard                6m34s
+~                                                                                                                   G kubernetes-222302
+
+
+❯ gcloud compute disks list
+NAME                                                             LOCATION       LOCATION_SCOPE  SIZE_GB  TYPE         STATUS
+gke-jaykube-9c1a0a79-d-pvc-31c34e07-9466-11ea-be15-42010a80010e  us-central1-a  zone            1        pd-ssd       READY
+gke-jaykube-9c1a0a79-d-pvc-3479b215-9467-11ea-be15-42010a80010e  us-central1-a  zone            1        pd-standard  READY
+
+kdel po mongodb
+
+k create -f mongodb-pod-pvc-nostorageclass.yaml
+pod/mongodb created
+
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongodb
+spec:
+  containers:
+  - image: mongo
+    name: mongodb
+    volumeMounts:
+    - name: mongodb-data 
+      mountPath: /data/db 
+    ports:
+    - containerPort: 27017
+      protocol: TCP
+  volumes:
+  - name: mongodb-data
+    persistentVolumeClaim:
+      claimName: mongodb-pvc2
+
+       -->
+
+kd po mongodb
+Name:         mongodb
+Namespace:    default
+Priority:     0
+Node:         gke-jaykube-default-pool-6124d961-8jt9/10.128.0.28
+Start Time:   Tue, 12 May 2020 10:00:17 -0600
+L.......
+Events:
+  Type    Reason                  Age   From                                             Message
+  ----    ------                  ----  ----                                             -------
+  Normal  Scheduled               23s   default-scheduler                                Successfully assigned default/mongodb to gke-jaykube-default-pool-6124d961-8jt9
+  Normal  SuccessfulAttachVolume  15s   attachdetach-controller                          AttachVolume.Attach succeeded for volume "pvc-3479b215-9467-11ea-be15-42010a80010e"
+  Normal  Pulling                 5s    kubelet, gke-jaykube-default-pool-6124d961-8jt9  Pulling image "mongo"
+  Normal  Pulled                  5s    kubelet, gke-jaykube-default-pool-6124d961-8jt9  Successfully pulled image "mongo"
+  Normal  Created                 4s    kubelet, gke-jaykube-default-pool-6124d961-8jt9  Created container mongodb
+  Normal  Started                 4s    kubelet, gke-jaykube-default-pool-6124d961-8jt9  Started container mongodb
+~                                       
+
+
+
+###### Config Maps And Secrets
+
+
+
+
+
 
 
 
