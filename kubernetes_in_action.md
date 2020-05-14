@@ -1696,6 +1696,8 @@ Address: 10.52.1.9
 # kdel all --all
 
 
+
+
 # PV's and PVC's
 
 ❯ k create -f  fortune-pod.yaml -n default
