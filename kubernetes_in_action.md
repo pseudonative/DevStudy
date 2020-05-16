@@ -1479,7 +1479,7 @@ You've hit kubia-hw6cl
 
 
 
-# Create an INgress resource
+# Create an Ingress resource
 
 k create -f kubia-ingress.yaml -n default
 ingress.extensions/kubia created
@@ -1726,7 +1726,8 @@ spec:
       protocol: TCP
   volumes:
   - name: html
-    emptyDir: {} -->
+    emptyDir: {}
+     -->
 
 
 k port-forward fortune 8888:80
@@ -1809,7 +1810,11 @@ This is a second check the first haddt https twice
 This is the Third Tiime.
 </body>
 </html>
-~                                                                                                                                      
+~                                                                                                                           
+modify pseudonative/kubia-website-example/index.html
+and check again 
+
+
 ❯ 
 
 Also Try it in a web browser
@@ -2038,19 +2043,21 @@ bye
 
 ❯ kdel po mongodb
 pod "mongodb" deleted
-~                                                                                                                          4s ○ jaykube
-❯ kdel pvc mongodb-pvc
-persistentvolumeclaim "mongodb-pvc" deleted
-~                 
-
+~                                                                                                         
 
 k create -f  mongodb-pod-pvc.yaml -n default
 pod/mongodb created
+....
+Events:
+  Type     Reason            Age                From               Message
+  ----     ------            ----               ----               -------
+  Warning  FailedScheduling  19s (x2 over 19s)  default-scheduler  persistentvolumeclaim "mongodb-pvc" not found
 
 
-❯ k create -f  mongodb-pvc.yaml
-persistentvolumeclaim/mongodb-pvc created
-                                                                                          ○ jaykube
+kdel pv --all
+
+               
+                                                                               ○ jaykube
 ❯ k create -f  mongodb-pod-pvc.yaml -n default
 pod/mongodb created
                                                                                                
@@ -2091,6 +2098,17 @@ pod/mongodb created
 ❯ 
 
 
+
+kd po mongodb
+...
+Events:
+  Type    Reason                  Age   From                     Message
+  ----    ------                  ----  ----                     -------
+  Normal  Scheduled               8s    default-scheduler        Successfully assigned default/mongodb to gke-jaykube-default-pool-7cd41a23-43tq
+  Normal  SuccessfulAttachVolume  2s    attachdetach-controller  AttachVolume.Attach succeeded for volume "mongodb-pv"
+
+
+
 ❯ kg pv
 NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                 STORAGECLASS   REASON   AGE
 mongodb-pv   1Gi        RWO,ROX        Retain           Bound    default/mongodb-pvc                           52s
@@ -2118,11 +2136,14 @@ bye
 
 kdel po mongodb
 
-❯ kdel pv --all
-persistentvolume "mongodb-pv" deleted
+# you have to delete the pvc in order for the pv to delete
 
 ❯ kdel pvc --all
 persistentvolumeclaim "mongodb-pvc" deleted
+
+
+❯ kdel pv --all
+persistentvolume "mongodb-pv" deleted
 
                                                                                        ○ jaykube
 ❯ kg pvc
@@ -2194,7 +2215,7 @@ standard (default)   kubernetes.io/gce-pd   17h
 ~    
 
 
-# Create Persistent Volume withou specifying storage class
+# Create Persistent Volume without specifying storage class
 
 ❯ kg sc standard -oyaml
 allowVolumeExpansion: true
@@ -2252,7 +2273,10 @@ NAME                                                             LOCATION       
 gke-jaykube-9c1a0a79-d-pvc-31c34e07-9466-11ea-be15-42010a80010e  us-central1-a  zone            1        pd-ssd       READY
 gke-jaykube-9c1a0a79-d-pvc-3479b215-9467-11ea-be15-42010a80010e  us-central1-a  zone            1        pd-standard  READY
 
+
 kdel po mongodb
+
+
 
 k create -f mongodb-pod-pvc-nostorageclass.yaml
 pod/mongodb created
@@ -2301,19 +2325,695 @@ Events:
 
 ###### Config Maps And Secrets
 
+k create -f  fortune-pod-args.yaml -n default
+pod/fortune2s created
+
+
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: fortune2s
+spec:
+  containers:
+  - image: luksa/fortune:args
+    args: ["2"]
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath:  /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html 
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {} -->
+
+k create -f fortune-pod-env.yaml -n default
+pod/fortune-env created
+
+
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: fortune-env
+spec:
+  containers:
+  - image: luksa/fortune:env
+    env:
+    - name: INTERVAL
+      value: "30"
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath:  /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html 
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {}
+ -->
+
+k create -f  fortune-pod-env-variable-inside-variable.yaml
+pod/fortune-env-variable created
+
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: fortune-env-variable
+spec:
+  containers:
+  - image: luksa/fortune:env
+    env:
+    - name: FIRST_VAR
+      value: "foo"
+    - name: SECOND_VAR
+      value: "$(FIRST_VAR)bar"
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath:  /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html 
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {}
+ -->
+
+
+
+❯ k create configmap fortune-config --from-literal=sleep-interval=25
+configmap/fortune-config created
+~                                                                                                                             ○ jaykube
+❯ kg configmap fortune-config
+NAME             DATA   AGE
+fortune-config   1      9s
+~                                                                                                                             ○ jaykube
+❯ kd configmap fortune-config
+Name:         fortune-config
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+sleep-interval:
+----
+25
+Events:  <none>
+~                                                                                                                                      
+❯ 
+
+
+
+❯  k create configmap myconfigmap --from-literal=foo=bar --from-literal=bar=baz --from-literal=one=two
+configmap/myconfigmap created
+~                                                                                                                             ○ jaykube
+
+                                                                                                                           ○ jaykube
+❯ kg configmap myconfigmap 
+NAME          DATA   AGE
+myconfigmap   3      16s
+~                                                                                                                             ○ jaykube
+❯ kd configmap myconfigmap
+Name:         myconfigmap
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+bar:
+----
+baz
+foo:
+----
+bar
+one:
+----
+two
+Events:  <none>
+~                                                                                                                                      
+❯ 
+
+❯ kg configmap fortune-config -oyaml
+apiVersion: v1
+data:
+  sleep-interval: "25"
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2020-05-16T17:13:17Z"
+  name: fortune-config
+  namespace: default
+  resourceVersion: "29368"
+  selfLink: /api/v1/namespaces/default/configmaps/fortune-config
+  uid: 89157b7a-9798-11ea-ab20-42010a80008d
+~                              
+
+# Use configmap fortune-config to create fortune-config.yaml
+
+
+<!-- 
+apiVersion: v1
+data:
+  sleep-interval: "25"
+kind: ConfigMap 
+metadata:
+  creationTimestamp: "2020-05-16T17:13:17Z"
+  name: fortune-config-from-config
+  namespace: default
+  resourceVersion: "29368"
+  selfLink: /api/v1/namespaces/default/configmaps/fortune-config
+  uid: 89157b7a-9798-11ea-ab20-42010a80008d
+  -->
+
+ cp fortune-config.yaml config-file.conf
+
+k create configmap my-config --from-file=/home/jeremy/DevStudy/yaml_files/config-file.conf 
+configmap/my-config created
+
+
+k create -f fortune-pod-env-configmap.yaml -n default
+pod/fortune-env-from-configmap created
+
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: fortune-env-from-configmap
+spec:
+  containers:
+  - image: luksa/fortune:env
+    env:
+    - name: INTERVAL
+      valueFrom: 
+        configMapKeyRef:
+          name: fortune-config
+          key: sleep-interval
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath:  /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html 
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {} -->
+
+
+k create -f fortune-pod-args-configmap.yaml -n default
+
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: fortuen-args-from-configmap
+spec:
+  containers:
+  - image: luksa/fortune:args
+    env:
+    - name: INTERVAL
+      valueFrom: 
+        configMapKeyRef:
+          name: fortune-config
+          key: sleep-interval
+    args: ["$(interval)"]
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath:  /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html 
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {} -->
+
+
+cat configmap-files/my-nginx-config.conf 
+<!-- 
+server {
+    listen              80:
+    server_name         www.kubia-example.com;
+
+    gzip on;
+    gzip_types text/plain application/xml;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+    }
+}
+ -->
+
+❯ cat configmap-files/sleep-interval
+<!-- 
+25 -->
+
+
+kdel configmap fortune-config
+configmap "fortune-config" deleted
+~                                   
+
+k create configmap fortune-config --from-file=/home/jeremy/DevStudy/yaml_files/configmap-files
+configmap/fortune-config created
+
+❯ kd configmap fortune-config
+<!-- Name:         fortune-config
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+fortune-pod-configmap-volume.yaml:
+----
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fortune-configmap-volume
+spec:
+  containers:
+  - image: luksa/fortune:env
+    env:
+    - name: INTERVAL
+      valueFrom:
+        configMapKeyRef:
+          name: fortune-config 
+          key: sleep-interval 
+    name: html-generator 
+    volumeMounts:
+    - name: html  
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    name: web-server 
+    volumeMounts:
+    - name: html 
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    - name: config 
+      mountPath: /etc/nginx/conf.d
+      readOnly: true
+    - name: config
+      mountPath: /tmp/whole-fortune-config-volume
+      readOnly: true
+    ports:
+      - containerPort: 80
+        name: http
+        protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {}
+  - name: config
+    configMap:
+      name: fortune-config
+
+my-nginx-config.conf:
+----
+server {
+    listen              80:
+    server_name         www.kubia-example.com;
+
+    gzip on;
+    gzip_types text/plain application/xml;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+    }
+}
+sleep-interval:
+----
+25
+
+Events:  <none>
+~                             -->
+
+
+kg configmap fortune-config -oyaml
+<!-- apiVersion: v1
+data:
+  fortune-pod-configmap-volume.yaml: "apiVersion: v1\nkind: Pod\nmetadata:\n  name:
+    fortune-configmap-volume\nspec:\n  containers:\n  - image: luksa/fortune:env\n
+    \   env:\n    - name: INTERVAL\n      valueFrom:\n        configMapKeyRef:\n          name:
+    fortune-config \n          key: sleep-interval \n    name: html-generator \n    volumeMounts:\n
+    \   - name: html  \n      mountPath: /var/htdocs\n  - image: nginx:alpine\n    name:
+    web-server \n    volumeMounts:\n    - name: html \n      mountPath: /usr/share/nginx/html\n
+    \     readOnly: true \n    - name: config \n      mountPath: /etc/nginx/conf.d\n
+    \     readOnly: true\n    - name: config\n      mountPath: /tmp/whole-fortune-config-volume\n
+    \     readOnly: true\n    ports:\n      - containerPort: 80\n        name: http\n
+    \       protocol: TCP\n  volumes:\n  - name: html\n    emptyDir: {}\n  - name:
+    config\n    configMap:\n      name: fortune-config\n"
+  my-nginx-config.conf: |-
+    server {
+        listen              80:
+        server_name         www.kubia-example.com;
+
+        gzip on;
+        gzip_types text/plain application/xml;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+        }
+    }
+  sleep-interval: |
+    25
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2020-05-16T17:43:03Z"
+  name: fortune-config
+  namespace: default
+  resourceVersion: "35715"
+  selfLink: /api/v1/namespaces/default/configmaps/fortune-config
+  uid: b19e8b09-979c-11ea-ab20-42010a80008d
+~                                                                                                                                      
+❯   -->
+
+❯ k port-forward fortune-configmap-volume 8888:80 &
+[1] 4895
+~                                                                                                          ≡
+❯ Forwarding from 127.0.0.1:8888 -> 80
+Forwarding from [::1]:8888 -> 80
+
+❯ curl -H "Accept-Encoding: gzip" -I localhost:8888
+HTTP/1.1 200 OK
+Server: nginx/1.17.10
+Date: Sat, 16 May 2020 18:46:27 GMT
+Content-Type: text/html
+Last-Modified: Sat, 16 May 2020 18:46:09 GMT
+Connection: keep-alive
+ETag: W/"5ec034f1-1fd"
+Content-Encoding: gzip
+
+~                 
+❯ Forwarding from 127.0.0.1:8888 -> 80
+Forwarding from [::1]:8888 -> 80
+Handling connection for 8888
+
+
+k exec fortune-configmap-volume -c web-server ls /etc/nginx/conf.d
+fortune-pod-configmap-volume.yaml
+my-nginx-config.conf
+sleep-interval
+~                 
+
+
+k apply -f  fortune-pod-confimgmap-volume-defaultMode.yaml -n default
+
+
+k edit configmap fortune-config
+
+gzip off
+
+wq
+
+configmap/fortune-config edited
+
+
+
+❯ k exec fortune-configmap-volume -c web-server cat /etc/nginx/conf.d/my-nginx-config.conf
+server {
+    listen              80;
+    server_name         www.kubia-example.com;
+
+    gzip off;
+    gzip_types text/plain application/xml;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+    }
+}                                                                                                                                ~                                                                                                                                      
+❯ 
+
+
+k exec fortune-configmap-volume -c web-server -- nginx -s reload
+2020/05/16 19:01:04 [notice] 17#17: signal process started
+~                 
+
+
+❯ k exec -it fortune-configmap-volume -c web-server -- ls -lA /etc/nginx/conf.d
+total 4
+drwxr-xr-x    2 root     root          4096 May 16 18:59 ..2020_05_16_18_59_10.880794085
+lrwxrwxrwx    1 root     root            31 May 16 18:59 ..data -> ..2020_05_16_18_59_10.880794085
+lrwxrwxrwx    1 root     root            40 May 16 18:44 fortune-pod-configmap-volume.yaml -> ..data/fortune-pod-configmap-volume.yaml
+lrwxrwxrwx    1 root     root            27 May 16 18:44 my-nginx-config.conf -> ..data/my-nginx-config.conf
+lrwxrwxrwx    1 root     root            21 May 16 18:44 sleep-interval -> ..data/sleep-interval
+~                                                                                                                                      
+❯ 
+
+
+# Secrets
+
+❯ kd po fortune-configmap-volume | grep -Ei secret
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-9pr9c (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-9pr9c (ro)
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-9pr9c
+~                                                                                                                                      
+❯ 
+
+
+❯ kg secrets
+NAME                  TYPE                                  DATA   AGE
+default-token-9pr9c   kubernetes.io/service-account-token   3      4h6m
+~                                                                                                                                      
+❯ 
+
+❯ kd secrets
+Name:         default-token-9pr9c
+Namespace:    default
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: default
+              kubernetes.io/service-account.uid: cbed923d-9785-11ea-ab20-42010a80008d
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+ca.crt:     1115 bytes
+namespace:  7 bytes
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tOXByOWMiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImNiZWQ5MjNkLTk3ODUtMTFlYS1hYjIwLTQyMDEwYTgwMDA4ZCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.PH4IdPXSJoB9G59nsdvJFO5i8EwOihqmUlopzkuholwEq7y4QkGtz3nvr4dRQX0nBFn4PZa5v2-dH5QoeD4wE-Z2KMyzExjcYR4mleG_vQGaknNcLiJFfWaSWpUlqx4KVfOtlpko6fpQi5GQtg_lwBGkTCvJ3SJFmT4kTP_fXbz3iRW6qjuTkWormcV-4Tgp_Dzxcb1QA0fGa0m-qOUc2dSzJGcxx52yYlW18dqcjXeOnztx9GURc1mAV9Ca0S2n57xJd-ZkIc-Mbi8jHYjn1eUjKW1OiAhc4ppRrdoTm8Rqh81U4MxvAEV2YZEL0R-XsN0_dRTyPAdMXuSEg-MEIg
+~                                                                                                                                      
+❯ 
+
+
+❯ kd po fortune-configmap-volume  
+...
+    Mounts:
+      /var/htdocs from html (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-9pr9c (ro)
+
+
+
+❯ k exec fortune-configmap-volume ls /var/run/secrets/kubernetes.io/serviceaccount/
+Defaulting container name to html-generator.
+Use 'kubectl describe pod/fortune-configmap-volume -n default' to see all of the containers in this pod.
+ca.crt
+namespace
+token
+~                                                                                                                                      
+❯ 
+
+
+❯ openssl genrsa -out https.key 2048
+Generating RSA private key, 2048 bit long modulus
+...............................................................+++
+................+++
+e is 65537 (0x10001)
+~                                                                                                                                      
+❯ openssl req -new -x509 -key https.key -out https.cert -days 365 -subj /CN=www.kubia-example.com
+~                                                                                                                                      
+❯ 
+
+❯ echo bar > foo
+~                                                                                                                             ○ jaykube
+❯ k create secret generic fortune-https --from-file=https.key --from-file=https.cert --from-file=foo
+
+secret/fortune-https created
+~                                                                                                                                      
+❯ 
 
 
 
 
+❯ kg secret fortune-https  -oyaml
+apiVersion: v1
+data:
+  foo: YmFyCg==
+  https.cert: 
+
+kind: Secret
 
 
 
+k create configmap fortune-config-ssl --from-file=/home/jeremy/DevStudy/yaml_files/configmap-files/ssl
 
 
+~/DevStudy/yaml_files/configmap-files/ssl                                
+❯ k create -f fortune-pod-configmap-volume.yaml
+pod/fortune-configmap-volume-ssl created
+<!-- 
+server {
+        listen              80;
+        listen              443 ssl;
+        server_name         www.kubia-example.com;
+
+        ssl_certificate     certs/https.cert;
+        ssl_certificate_key certs/https.key;
+        ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+        ssl_ciphers         HIGH:!aNULL:!MD5;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+        }
+    }
+ -->
+<!-- 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fortune-https
+spec:
+  containers:
+  - image: luksa/fortune:env
+    name: html-generator
+    env:
+    - name: INTERVAL
+      valueFrom:
+        configMapKeyRef:
+          name: fortune-config-ssl
+          key: sleep-interval  
+    volumeMounts:
+    - name: html  
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    name: web-server 
+    volumeMounts:
+    - name: html 
+      mountPath: /usr/share/nginx/html
+      readOnly: true 
+    - name: config 
+      mountPath: /etc/nginx/conf.d
+      readOnly: true
+    - name: certs
+      mountPath: /etc/nginx/certs
+      readOnly: true
+    ports:
+      - containerPort: 80
+      - containerPort: 443
+        name: http
+        protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {}
+  - name: config
+    configMap:
+      name: fortune-config-ssl
+      items:
+      - key: my-nginx-config-ssl.conf
+        path: https.conf
+  - name: certs
+    secret:
+      secretName: fortune-https
+
+ -->
+
+❯ kg po fortune-https
+NAME            READY   STATUS    RESTARTS   AGE
+fortune-https   2/2     Running   0          50s
+~                                                  
 
 
+❯ k port-forward fortune-https 4443:443 &
+[2] 11390
+~                                                                                                          ≡
+❯ Forwarding from 127.0.0.1:4443 -> 443
+Forwarding from [::1]:4443 -> 443
 
 
+❯ curl https://localhost:4443 -k -v 
+* About to connect() to localhost port 4443 (#0)
+*   Trying ::1...
+* Connected to localhost (::1) port 4443 (#0)
+* Initializing NSS with certpath: sql:/etc/pki/nssdb
+* skipping SSL peer certificate verification
+* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+* Server certificate:
+* 	subject: CN=www.kubia-example.com
+* 	start date: May 16 19:12:01 2020 GMT
+* 	expire date: May 16 19:12:01 2021 GMT
+* 	common name: www.kubia-example.com
+* 	issuer: CN=www.kubia-example.com
+> GET / HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: localhost:4443
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Server: nginx/1.17.10
+< Date: Sat, 16 May 2020 19:45:35 GMT
+< Content-Type: text/html
+< Content-Length: 92
+< Last-Modified: Sat, 16 May 2020 19:45:20 GMT
+< Connection: keep-alive
+< ETag: "5ec042d0-5c"
+< Accept-Ranges: bytes
+< 
+Clothes make the man.  Naked people have little or no influence on society.
+		-- Mark Twain
+* Connection #0 to host localhost left intact
+~                                                                                                                                      
+❯ 
+
+❯ curl https://localhost:4443 -k    
+Habit is habit, and not to be flung out of the window by any man, but coaxed
+down-stairs a step at a time.
+		-- Mark Twain, "Pudd'nhead Wilson's Calendar
+~                                                                                                                                      
+❯ 
+
+❯ k exec fortune-https -c web-server -- mount | grep certs
+tmpfs on /etc/nginx/certs type tmpfs (ro,relatime)
+~                                                                                                                                      
+❯ 
 
 
 
