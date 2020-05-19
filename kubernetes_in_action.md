@@ -2725,6 +2725,9 @@ metadata:
 ~                                                                                                                                      
 ❯   -->
 
+
+
+
 ❯ k port-forward fortune-configmap-volume 8888:80 &
 [1] 4895
 ~                                                                                                          ≡
@@ -2851,6 +2854,7 @@ token
 ~                                                                                                                                      
 ❯ 
 
+# Remember to remove the .key and .cert from ~/
 
 ❯ openssl genrsa -out https.key 2048
 Generating RSA private key, 2048 bit long modulus
