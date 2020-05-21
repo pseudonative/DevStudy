@@ -3020,6 +3020,694 @@ tmpfs on /etc/nginx/certs type tmpfs (ro,relatime)
 ❯ 
 
 
+# Singl Yaml File Replication Controller and Service
+
+k create -f  kubia-rc-and-service-v1.yaml -n default
+replicationcontroller/kubia-v1 created
+service/kubia created
+<!-- 
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: kubia-v1
+spec: 
+  replicas: 3
+  template:
+    metadata:
+      name: kubia
+      labels:
+        app: kubia 
+    spec: 
+      containers:
+      - image: luksa/kubia:v1 
+        name: nodejs 
+---
+apiVersion: v1 
+kind: Service 
+metadata:
+  name: kubia 
+spec:
+  type: LoadBalancer 
+  selector: 
+    app: kubia 
+  ports: 
+  - port: 80 
+    targetPort: 8080 
+     -->
+
+❯ kg svc kubia
+NAME    TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)        AGE
+kubia   LoadBalancer   10.51.252.132   104.198.208.184   80:30290/TCP   112s
+~                                                                                                                                      
+❯ 
+
+
+while true; do curl http://104.198.208.184; done
+This is v1 running in pod kubia-v1-8gxhv
+This is v1 running in pod kubia-v1-8gxhv
+This is v1 running in pod kubia-v1-8gxhv
+This is v1 running in pod kubia-v1-6dz87
+This is v1 running in pod kubia-v1-4tdpj
+This is v1 running in pod kubia-v1-4tdpj
+This is v1 running in pod kubia-v1-8gxhv
+
+# keep running while making rolling update to see v1 change to v2
+
+
+k rolling-update kubia-v1 kubia-v2 --image=luksa/kubia:v2
+Command "rolling-update" is deprecated, use "rollout" instead
+Created kubia-v2
+Scaling up kubia-v2 from 0 to 3, scaling down kubia-v1 from 3 to 0 (keep 3 pods available, don't exceed 4 pods)
+Scaling kubia-v2 up to 1
+Scaling kubia-v1 down to 2
+Scaling kubia-v2 up to 2
+Continuing update with existing controller kubia-v2.
+Scaling up kubia-v2 from 2 to 3, scaling down kubia-v1 from 2 to 0 (keep 3 pods available, don't exceed 4 pods)
+Update succeeded. Deleting kubia-v1
+replicationcontroller/kubia-v2 rolling updated to "kubia-v2"
+
+
+
+kg po --watch
+NAME             READY   STATUS    RESTARTS   AGE
+kubia-v1-4tdpj   1/1     Running   0          5m26s
+kubia-v1-6dz87   1/1     Running   0          5m26s
+kubia-v1-8gxhv   1/1     Running   0          5m26s
+kubia-v2-ptk7n   1/1     Running   0          44s
+NAME             AGE
+kubia-v1-4tdpj   5m46s
+kubia-v2-cl5vn   0s
+kubia-v2-cl5vn   0s
+kubia-v2-cl5vn   0s
+kubia-v2-cl5vn   3s
+kubia-v1-4tdpj   6m16s
+kubia-v1-4tdpj   6m17s
+kubia-v1-4tdpj   6m17s
+
+
+
+
+kd rc kubia-v2
+Name:         kubia-v2
+Namespace:    default
+Selector:     app=kubia,deployment=a8594fc36987b2a46f90be05a7bcee90
+Labels:       app=kubia
+Annotations:  kubectl.kubernetes.io/desired-replicas: 3
+              kubectl.kubernetes.io/update-source-id: kubia-v1:3d96dcc2-9ab9-11ea-ad22-42010a80001c
+Replicas:     2 current / 2 desired
+Pods Status:  2 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=kubia
+           deployment=a8594fc36987b2a46f90be05a7bcee90
+  Containers:
+   nodejs:
+    Image:        luksa/kubia:v2
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Events:
+  Type    Reason            Age    From                    Message
+  ----    ------            ----   ----                    -------
+  Normal  SuccessfulCreate  3m44s  replication-controller  Created pod: kubia-v2-ptk7n
+  Normal  SuccessfulCreate  2m37s  replication-controller  Created pod: kubia-v2-cl5vn
+
+
+
+kd rc kubia-v1
+Name:         kubia-v1
+Namespace:    default
+Selector:     app=kubia,deployment=c06162b6f9f03c60afc6200a963221be-orig
+Labels:       app=kubia
+Annotations:  kubectl.kubernetes.io/next-controller-id: kubia-v2
+              kubectl.kubernetes.io/original-replicas: 3
+Replicas:     1 current / 1 desired
+Pods Status:  2 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=kubia
+           deployment=c06162b6f9f03c60afc6200a963221be-orig
+  Containers:
+   nodejs:
+    Image:        luksa/kubia:v1
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Events:
+  Type    Reason            Age    From                    Message
+  ----    ------            ----   ----                    -------
+  Normal  SuccessfulCreate  9m23s  replication-controller  Created pod: kubia-v1-8gxhv
+  Normal  SuccessfulCreate  9m23s  replication-controller  Created pod: kubia-v1-6dz87
+  Normal  SuccessfulCreate  9m23s  replication-controller  Created pod: kubia-v1-4tdpj
+  Normal  SuccessfulDelete  3m37s  replication-controller  Deleted pod: kubia-v1-4tdpj
+  Normal  SuccessfulDelete  23s    replication-controller  Deleted pod: kubia-v1-8gxhv
+
+
+
+
+kg po --show-labels
+NAME             READY   STATUS    RESTARTS   AGE     LABELS
+kubia-v1-6dz87   1/1     Running   0          9m54s   app=kubia,deployment=c06162b6f9f03c60afc6200a963221be-orig
+kubia-v2-cl5vn   1/1     Running   0          4m5s    app=kubia,deployment=a8594fc36987b2a46f90be05a7bcee90
+kubia-v2-ptk7n   1/1     Running   0          5m12s   app=kubia,deployment=a8594fc36987b2a46f90be05a7bcee90
+kubia-v2-zbwsw   1/1     Running   0          51s     app=kubia,deployment=a8594fc36987b2a46f90be05a7bcee90
+
+# Roll it back to see rolling update with Verbose logging -v
+
+k rolling-update kubia-v2 kubia-v1 --image=luksa/kubia:v1
+Command "rolling-update" is deprecated, use "rollout" instead
+Created kubia-v1
+Scaling up kubia-v1 from 0 to 3, scaling down kubia-v2 from 3 to 0 (keep 3 pods available, don't exceed 4 pods)
+Scaling kubia-v1 up to 1
+Scaling kubia-v2 down to 2
+Scaling kubia-v1 up to 2
+Scaling kubia-v2 down to 1
+Scaling kubia-v1 up to 3
+Scaling kubia-v2 down to 0
+Update succeeded. Deleting kubia-v2
+replicationcontroller/kubia-v1 rolling updated to "kubia-v1"
+~                                                                                                                                3m 17s
+❯ 
+
+
+
+k rolling-update kubia-v1 kubia-v2 --image=luksa/kubia:v2 --v 6
+Command "rolling-update" is deprecated, use "rollout" instead
+I0520 11:01:33.777799   28918 loader.go:375] Config loaded from file:  /home/jeremy/.kube/config
+I0520 11:01:33.941768   28918 round_trippers.go:443] GET https://35.193.179.130/api/v1/namespaces/default/replicationcontrollers/kubia-v1 200 OK in 150 milliseconds
+I0520 11:01:33.989933   28918 round_trippers.go:443] GET https://35.193.179.130/api/v1/namespaces/default/replicationcontrollers/kubia-v2 404 Not Found in 32 milliseconds
+I0520 11:01:34.029987   28918 round_trippers.go:443] GET https://35.193.179.130/api/v1/namespaces/default/replicationcontrollers/kubia-v1 200 OK in 39 milliseconds
+I0520 11:01:34.071571   28918 round_trippers.go:443] PUT https://35.193.179.130/api/v1/namespaces/default/replicationcontrollers/kubia-v1 200 OK in 37 milliseconds
+I0520 11:01:34.113667   28918 round_trippers.go:443] GET https://35.193.179.130/api/v1/namespaces/default/replicationcontrollers/kubia-v2 404 Not Found in 41 milliseconds
+I0520 11:01:34.178822   28918 round_trippers.go:443] POST https://35.193.179.130/api/v1/namespaces/default/replicationcontrollers 201 Created in 65 milliseconds
+Created kubia-v2
+I0520 11:01:34.213630   28918 round_trippers.go:
+
+.......... 
+
+
+
+
+# Deployments - First  kdel rc --all
+
+k create -f  kubia-deployment-v1.yaml -n default -v 6 --record
+
+I0520 11:12:34.178949    7710 loader.go:375] Config loaded from file:  /home/jeremy/.kube/config
+I0520 11:12:34.336549    7710 round_trippers.go:443] GET https://35.193.179.130/openapi/v2?timeout=32s 200 OK in 157 milliseconds
+I0520 11:12:34.592559    7710 round_trippers.go:443] POST https://35.193.179.130/apis/apps/v1beta1/namespaces/default/deployments 201 Created in 74 milliseconds
+deployment.apps/kubia created
+
+
+<!-- 
+apiVersion: apps/v1beta1
+kind: Deployment 
+metadata:
+  name: kubia 
+spec:
+  replicas: 3
+  template: 
+    metadata:
+      name: kubia 
+      labels:
+        app: kubia 
+    spec:
+      containers:
+      - image: luksa/kubia:v1 
+        name: nodejs
+ -->
+
+k rollout status deployment kubia
+deployment "kubia" successfully rolled out
+~                                     
+
+
+kg po
+NAME                     READY   STATUS    RESTARTS   AGE
+kubia-5dfcbbfcff-c2v6t   1/1     Running   0          85s
+kubia-5dfcbbfcff-hrbxt   1/1     Running   0          85s
+kubia-5dfcbbfcff-kdcdw   1/1     Running   0          85s
+~                            
+
+
+kg rs
+NAME               DESIRED   CURRENT   READY   AGE
+kubia-5dfcbbfcff   3         3         3       100s
+~                                
+
+kg svc
+NAME         TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)        AGE
+kubernetes   ClusterIP      10.51.240.1     <none>          443/TCP        4m1s
+kubia        LoadBalancer   10.51.249.189   35.192.177.56   80:30951/TCP   79s
+~                                  
+
+
+while true; do curl http://35.192.177.56; done  
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v1 running in pod kubia-5dfcbbfcff-hrbxt
+This is v1 running in pod kubia-5dfcbbfcff-hrbxt
+This is v1 running in pod kubia-5dfcbbfcff-c2v6t
+This is v1 running in pod kubia-5dfcb
+
+
+
+k patch deployment kubia -p '{"spec": {"minReadySeconds": 10}}' 
+deployment.extensions/kubia patched
+~                                                                                                                                      
+❯ 
+
+
+k set image deployment kubia nodejs=luksa/kubia:v2
+deployment.extensions/kubia image updated
+~                                                                                                                                      
+❯ 
+
+kg po
+NAME                     READY   STATUS        RESTARTS   AGE
+kubia-5dfcbbfcff-c2v6t   1/1     Terminating   0          7m28s
+kubia-5dfcbbfcff-hrbxt   1/1     Running       0          7m28s
+kubia-5dfcbbfcff-kdcdw   1/1     Running       0          7m28s
+kubia-7c699f58dd-rp8xd   1/1     Running       0          18s
+kubia-7c699f58dd-spf4m   1/1     Running       0          6s
+
+
+
+This is v2 running in pod kubia-7c699f58dd-spf4m
+This is v2 running in pod kubia-7c699f58dd-spf4m
+This is v2 running in pod kubia-7c699f58dd-spf4m
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v2 running in pod kubia-7c699f58dd-tfjsr
+This is v2 running in pod kubia-7c699f58dd-tfjsr
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v2 running in pod kubia-7c699f58dd-rp8xd
+This is v2 running in pod kubia-7c699f58dd-tfjsr
+This is v2 running in pod kubia-7c699f58dd-rp8xd
+This is v2 running in pod kubia-7c699f58dd-spf4m
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v2 running in pod kubia-7c699f58dd-rp8xd
+This is v2 running in pod kubia-7c699f58dd-rp8xd
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v1 running in pod kubia-5dfcbbfcff-kdcdw
+This is v2 running in pod kubia-7c699f58dd-rp8xd
+
+
+
+kg rs
+NAME               DESIRED   CURRENT   READY   AGE
+kubia-5dfcbbfcff   0         0         0       8m21s
+kubia-7c699f58dd   3         3         3       71s
+~                          
+
+# Rollback a deployment
+
+k set image deployment kubia nodejs=luksa/kubia:v3
+deployment.extensions/kubia image updated
+~                                                                                                                                      
+❯ 
+
+k rollout status deployment kubia
+deployment "kubia" successfully rolled out
+~                                      
+
+
+kg po
+NAME                     READY   STATUS        RESTARTS   AGE
+kubia-5c98f77977-n6sjc   1/1     Running       0          7s
+kubia-5c98f77977-pkfjd   1/1     Running       0          19s
+kubia-7c699f58dd-rp8xd   1/1     Running       0          2m44s
+kubia-7c699f58dd-spf4m   1/1     Running       0          2m32s
+kubia-7c699f58dd-tfjsr   1/1     Terminating   0          2m20s
+~/DevStudy/yaml_files/configmap-files/ssl master ?4                                                                           ○ jaykube
+❯ kg po
+NAME                     READY   STATUS        RESTARTS   AGE
+kubia-5c98f77977-n6sjc   1/1     Running       0          16s
+kubia-5c98f77977-pkfjd   1/1     Running       0          28s
+kubia-5c98f77977-tt99f   1/1     Running       0          3s
+kubia-7c699f58dd-rp8xd   1/1     Running       0          2m53s
+kubia-7c699f58dd-spf4m   1/1     Terminating   0          2m41s
+kubia-7c699f58dd-tfjsr   1/1     Terminating   0          2m29s
+~/DevStudy/yaml_files/configmap-files/ssl master ?4                                                                           ○ jaykube
+❯ kg po
+NAME                     READY   STATUS        RESTARTS   AGE
+kubia-5c98f77977-n6sjc   1/1     Running       0          18s
+kubia-5c98f77977-pkfjd   1/1     Running       0          30s
+kubia-5c98f77977-tt99f   1/1     Running       0          5s
+kubia-7c699f58dd-rp8xd   1/1     Running       0          2m55s
+kubia-7c699f58dd-spf4m   1/1     Terminating   0          2m43s
+kubia-7c699f58dd-tfjsr   1/1     Terminating   0          2m31s
+
+
+
+
+
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+This is v2 running in pod kubia-7c699f58dd-rp8xd
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+This is v2 running in pod kubia-7c699f58dd-rp8xd
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+This is v2 running in pod kubia-7c699f5
+
+
+
+
+k rollout history deployment kubia
+deployment.extensions/kubia 
+REVISION  CHANGE-CAUSE
+1         kubectl create --filename=kubia-deployment-v1.yaml --namespace=default --v=6 --record=true
+2         kubectl create --filename=kubia-deployment-v1.yaml --namespace=default --v=6 --record=true
+3         kubectl create --filename=kubia-deployment-v1.yaml --namespace=default --v=6 --record=true
+
+
+
+
+k rollout undo deployment kubia --to-revision=1
+deployment.extensions/kubia rolled back
+~                
+
+
+                                                                         ○ jaykube
+❯ kg po
+NAME                     READY   STATUS              RESTARTS   AGE
+kubia-5c98f77977-n6sjc   1/1     Terminating         0          3m12s
+kubia-5c98f77977-pkfjd   1/1     Running             0          3m24s
+kubia-5c98f77977-tt99f   1/1     Terminating         0          2m59s
+kubia-5dfcbbfcff-4czwf   1/1     Running             0          11s
+kubia-5dfcbbfcff-9txtn   1/1     Running             0          23s
+kubia-5dfcbbfcff-m8zc4   0/1     ContainerCreating   0          0s
+~/DevStudy/yaml_files/configmap-files/ssl master ?4                                                                           ○ jaykube
+❯ kg po
+NAME                     READY   STATUS              RESTARTS   AGE
+kubia-5c98f77977-n6sjc   1/1     Terminating         0          3m13s
+kubia-5c98f77977-pkfjd   1/1     Running             0          3m25s
+kubia-5c98f77977-tt99f   1/1     Terminating         0          3m
+kubia-5dfcbbfcff-4czwf   1/1     Running             0          12s
+kubia-5dfcbbfcff-9txtn   1/1     Running             0          24s
+kubia-5dfcbbfcff-m8zc4   0/1     ContainerCreating   0          1s
+~/DevStudy/yaml_files/configmap-files/ssl master ?4                                                                           ○ jaykube
+❯ kg po
+NAME                     READY   STATUS        RESTARTS   AGE
+kubia-5c98f77977-n6sjc   1/1     Terminating   0          3m16s
+kubia-5c98f77977-pkfjd   1/1     Running       0          3m28s
+kubia-5c98f77977-tt99f   1/1     Terminating   0          3m3s
+kubia-5dfcbbfcff-4czwf   1/1     Running       0          15s
+kubia-5dfcbbfcff-9txtn   1/1     Running       0          27s
+kubia-5dfcbbfcff-m8zc4   1/1     Running       0          4s
+
+
+
+
+
+e internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+This is v1 running in pod kubia-5dfcbbfcff-9txtn
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+This is v1 running in pod kubia-5dfcbbfcff-9txtn
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-n6sjc
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+Some internal error has occurred! This is pod kubia-5c98f77977-tt99f
+This is v1 running in pod kubia-5dfcbbfcff-9txtn
+Some internal error has occurred! This is pod kubia-5c98f77977-pkfjd
+This is v1 running in pod kubia-5dfcbbfcff-9txtn
+Some internal error has oc
+
+
+
+This is v1 running in pod kubia-5dfcbbfcff-m8zc4
+This is v1 running in pod kubia-5dfcbbfcff-4czwf
+This is v1 running in pod kubia-5dfcbbfcff-4czwf
+This is v1 running in pod kubia-5dfcbbfcff-4czwf
+
+
+
+
+kg po
+NAME                     READY   STATUS    RESTARTS   AGE
+kubia-5dfcbbfcff-4czwf   1/1     Running   0          72s
+kubia-5dfcbbfcff-9txtn   1/1     Running   0          84s
+kubia-5dfcbbfcff-m8zc4   1/1     Running   0          61s
+
+
+
+k set image deployment kubia nodejs=luksa/kubia:v4
+deployment.extensions/kubia image updated
+~                                                                                                                             ○ jaykube
+❯ 
+k rollout pause deployment kubia
+
+deployment.extensions/kubia paused
+~              
+
+
+kg po
+NAME                     READY   STATUS    RESTARTS   AGE
+kubia-5dfcbbfcff-4czwf   1/1     Running   0          3m2s
+kubia-5dfcbbfcff-9txtn   1/1     Running   0          3m14s
+kubia-5dfcbbfcff-m8zc4   1/1     Running   0          2m51s
+kubia-6976f5b8f8-jd866   1/1     Running   0          22s
+
+
+
+k rollout resume deployment kubia
+deployment.extensions/kubia resumed
+~                                
+
+kg po
+NAME                     READY   STATUS              RESTARTS   AGE
+kubia-5dfcbbfcff-4czwf   1/1     Running             0          3m37s
+kubia-5dfcbbfcff-9txtn   1/1     Running             0          3m49s
+kubia-5dfcbbfcff-m8zc4   1/1     Terminating         0          3m26s
+kubia-6976f5b8f8-jd866   1/1     Running             0          57s
+kubia-6976f5b8f8-xhvtl   0/1     ContainerCreating   0          2s
+
+
+This is v4 running in pod kubia-6976f5b8f8-xhvtl
+This is v4 running in pod kubia-6976f5b8f8-8lwnl
+This is v4 running in pod kubia-6976f5b8f8-xhvtl
+This is v4 running in pod kubia-6976f5b8f8-xhvtl
+This is v4 running in pod kubia-6976f5b8f8-jd866
+This is v4 running in pod kubia-6976f5b8f8-8lwnl
+This is v4 running in pod kubia-6976f5b8f8-8lwnl
+This is v4 running in pod kubia-6976f5b8f8-xhvtl
+This is v4 running in pod kubia-6976f5b8f8-jd866
+This is v4 running in pod kubia-6976f5b8f8-jd866
+This is v4 running in pod kubia-6976f5b8f8-xhvtl
+This is v4 running in pod kubia-6976f5b8f8-8lwnl
+This is v4 running in pod kubia-6976f5b8f8-xhvtl
+This is v4 running in pod kubia-6976f5b8f8-8lwnl
+This is v1 running in pod kubia-5dfcbbfcff-9txtn
+This is v4 running in pod kubia-6976f5b8f8-xhvtl
+
+
+# Readiness probe to prevent a bad Version Rollout 
+
+
+k apply -f  kubia-deployment-v3-with-readinesscheck.yaml
+deployment.apps/kubia configured
+
+
+<!-- 
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: kubia 
+spec:
+  replicas: 3
+  minReadySeconds: 10
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0 
+    type: RollingUpdate 
+  template:
+    metadata: 
+      name: kubia 
+      labels: 
+        app: kubia 
+    spec:
+      containers:
+      - image: luksa/kubia:v3 
+        name: nodejs 
+        readinessProbe:
+          periodSeconds: 1
+          httpGet:
+            path: / 
+            port: 8080 -->
+
+
+
+❯ kg po
+NAME                     READY   STATUS    RESTARTS   AGE
+kubia-6976f5b8f8-8lwnl   1/1     Running   0          6m38s
+kubia-6976f5b8f8-jd866   1/1     Running   0          7m46s
+kubia-6976f5b8f8-xhvtl   1/1     Running   0          6m51s
+kubia-84b59979b9-qkmqh   0/1     Running   0          13s
+~                                                                                                                             ○ jaykube
+❯ k rollout status deployment kubia
+Waiting for deployment "kubia" rollout to finish: 1 out of 3 new replicas have been updated...
+
+
+kd deploy kubia
+Name:                   kubia
+Namespace:              default
+CreationTimestamp:      Wed, 20 May 2020 11:12:34 -0600
+Labels:                 app=kubia
+Annotations:            deployment.kubernetes.io/revision: 6
+                        kubectl.kubernetes.io/last-applied-configuration:
+                          {"apiVersion":"apps/v1beta1","kind":"Deployment","metadata":{"annotations":{},"name":"kubia","namespace":"default"},"spec":{"minReadySecon...
+                        kubernetes.io/change-cause: kubectl create --filename=kubia-deployment-v1.yaml --namespace=default --v=6 --record=true
+Selector:               app=kubia
+Replicas:               3 desired | 1 updated | 4 total | 3 available | 1 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        10
+RollingUpdateStrategy:  0 max unavailable, 1 max surge
+Pod Template:
+  Labels:  app=kubia
+  Containers:
+   nodejs:
+    Image:        luksa/kubia:v3
+    Port:         <none>
+    Host Port:    <none>
+    Readiness:    http-get http://:8080/ delay=0s timeout=1s period=1s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    ReplicaSetUpdated
+OldReplicaSets:  kubia-6976f5b8f8 (3/3 replicas created)
+NewReplicaSet:   kubia-84b59979b9 (1/1 replicas created)
+Events:
+  Type    Reason             Age                   From                   Message
+  ----    ------             ----                  ----                   -------
+  Normal  ScalingReplicaSet  19m                   deployment-controller  Scaled up replica set kubia-7c699f58dd to 1
+  Normal  ScalingReplicaSet  19m                   deployment-controller  Scaled down replica set kubia-5dfcbbfcff to 2
+  Normal  ScalingReplicaSet  19m                   deployment-controller  Scaled up replica set kubia-7c699f58dd to 2
+  Normal  ScalingReplicaSet  18m                   deployment-controller  Scaled up replica set kubia-7c699f58dd to 3
+  Normal  ScalingReplicaSet  18m                   deployment-controller  Scaled down replica set kubia-5dfcbbfcff to 0
+  Normal  ScalingReplicaSet  16m                   deployment-controller  Scaled up replica set kubia-5c98f77977 to 1
+  Normal  ScalingReplicaSet  16m                   deployment-controller  Scaled down replica set kubia-7c699f58dd to 2
+  Normal  ScalingReplicaSet  13m (x2 over 26m)     deployment-controller  Scaled up replica set kubia-5dfcbbfcff to 3
+  Normal  ScalingReplicaSet  9m49s (x2 over 18m)   deployment-controller  Scaled down replica set kubia-5dfcbbfcff to 1
+  Normal  ScalingReplicaSet  3m24s (x15 over 16m)  deployment-controller  (combined from similar events): Scaled up replica set kubia-84b59979b9 to 1
+
+
+
+k rollout undo deployment kubia
+deployment.extensions/kubia rolled back
+
+
+k rollout status deployment kubia
+Waiting for deployment "kubia" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment spec update to be observed...
+Waiting for deployment spec update to be observed...
+Waiting for deployment "kubia" rollout to finish: 1 old replicas are pending termination...
+deployment "kubia" successfully rolled out
+~                                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
