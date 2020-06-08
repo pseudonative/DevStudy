@@ -1,6 +1,6 @@
 # This document is to be done everyday for repetition study
 # Try to throw the cluster up the night before - saves time
-# maybe even run 2 or 3 to practice moving between clusters
+# maybe even run 2 or 3 clusters, to practice moving between clusters
 # aliases
 k=kubectl
 kd='kubectl describe'
@@ -8,6 +8,17 @@ kdel='kubectl delete'
 kg='kubectl get'
 ktx='k config get-contexts'
 kuse='k config use-context'
+
+# To resize Cluster
+❯ gcloud container node-pools list --cluster kubia
+NAME          MACHINE_TYPE   DISK_SIZE_GB  NODE_VERSION
+default-pool  n1-standard-1  100           1.14.10-gke.36
+~                                                                                                                   G kubernetes-222302
+❯ gcloud container clusters resize kubia --node-pool default-pool --num-nodes 4
+Pool [default-pool] for [kubia] will be resized to 4.
+
+Do you want to continue (Y/n)?  y
+
 
 # moving between clusters
 kubectl config get-clusters
@@ -78,6 +89,8 @@ spec:
 
 kg po --watch 
 
+watch kubectl get po
+
 # check the pod
 
 kg po 
@@ -112,7 +125,7 @@ kubia   1         1         1       12m
 
 
 
-➜  kubernetes_in_action git:(master) ✗ kd rc
+ kd rc
 Name:         kubia
 Namespace:    default
 Selector:     run=kubia
@@ -137,7 +150,7 @@ Events:
 
 
 
-➜  kubernetes_in_action git:(master) ✗ kd rc | grep -Ei Normal | awk '{print $1 "   " $2}'
+kd rc | grep -Ei Normal | awk '{print $1 "   " $2}'
 Normal   SuccessfulCreate
 
 # expose the replication controller
@@ -158,7 +171,7 @@ kubia-http   LoadBalancer   10.7.241.152   34.68.141.247   1100:31157/TCP   49s 
 
 # Check the Load Balancer service
 
-➜  kubernetes_in_action git:(master) ✗ ping 34.68.141.247
+ping 34.68.141.247
 PING 34.68.141.247 (34.68.141.247) 56(84) bytes of data.
 64 bytes from 34.68.141.247: icmp_seq=27 ttl=42 time=35.0 ms
 64 bytes from 34.68.141.247: icmp_seq=28 ttl=42 time=33.7 ms
@@ -168,39 +181,39 @@ PING 34.68.141.247 (34.68.141.247) 56(84) bytes of data.
 29 packets transmitted, 3 received, 89% packet loss, time 28003ms
 rtt min/avg/max/mdev = 33.745/35.771/38.555/2.046 ms
 
-➜  kubernetes_in_action git:(master) ✗ curl 34.68.141.247:8080
+curl 34.68.141.247:8080
 You've hit kubia-p9982
 
 
 # Scale the Replication Controller
 
-➜  kubernetes_in_action git:(master) ✗ kg rc
+kg rc
 NAME    DESIRED   CURRENT   READY   AGE
 kubia   1         1         1       3m37s
 
 
-➜  kubernetes_in_action git:(master) ✗ k scale rc kubia --replicas=3
+k scale rc kubia --replicas=3
 replicationcontroller/kubia scaled
 
 
-➜  kubernetes_in_action git:(master) ✗ kg rc
+kg rc
 NAME    DESIRED   CURRENT   READY   AGE
 kubia   3         3         2       4m18s
 
 
-➜  kubernetes_in_action git:(master) ✗ kg rc
+kg rc
 NAME    DESIRED   CURRENT   READY   AGE
 kubia   3         3         2       4m23s
 
 
-➜  kubernetes_in_action git:(master) ✗ kg po
+kg po
 NAME          READY   STATUS              RESTARTS   AGE
 kubia-8xvqb   1/1     Running             0          22s
 kubia-p9982   1/1     Running             0          4m31s
 kubia-vqdk4   0/1     ContainerCreating   0          22s
 
 
-➜  kubernetes_in_action git:(master) ✗ kd rc        
+kd rc        
 Name:         kubia
 Namespace:    default
 Selector:     run=kubia
@@ -227,11 +240,11 @@ Events:
 
 # check the loadbalancer service now
 
-➜  kubernetes_in_action git:(master) ✗ curl 34.68.141.247:8080
+curl 34.68.141.247:8080
 You've hit kubia-vqdk4
-➜  kubernetes_in_action git:(master) ✗ curl 34.68.141.247:8080
+curl 34.68.141.247:8080
 You've hit kubia-p9982
-➜  kubernetes_in_action git:(master) ✗ curl 34.68.141.247:8080
+curl 34.68.141.247:8080
 You've hit kubia-8xvqb
 
 
@@ -268,7 +281,7 @@ k logs <pod id> -c <container>  # if multiple containers in pod
 
 k port-forward <pod> 1111:8080
 
-➜  yaml_files git:(master) ✗ k port-forward kubia-manual 1111:8080
+k port-forward kubia-manual 1111:8080
 Forwarding from 127.0.0.1:1111 -> 8080
 Forwarding from [::1]:1111 -> 8080
 Handling connection for 1111
@@ -282,7 +295,7 @@ You've hit kubia-manual
 
 # Create POD with Labels 
 
-➜  yaml_files git:(master) ✗ k create -f  kubia-manual-with-labels.yaml -n default
+k create -f  kubia-manual-with-labels.yaml -n default
 pod/kubia-manual-v2 created
 <!-- 
 apiVersion: v1
@@ -302,19 +315,19 @@ spec:
  -->
 
 
-➜  yaml_files git:(master) ✗ kg po
+kg po
 NAME              READY   STATUS    RESTARTS   AGE
 kubia-manual      1/1     Running   0          42m
 kubia-manual-v2   1/1     Running   0          3s
 
 
-➜  yaml_files git:(master) ✗ kg po --show-labels
+kg po --show-labels
 NAME              READY   STATUS    RESTARTS   AGE   LABELS
 kubia-manual      1/1     Running   0          42m   <none>
 kubia-manual-v2   1/1     Running   0          23s   creation_method=manual,env=prod
 
 
-➜  yaml_files git:(master) ✗ k get po -L creation_method,env
+k get po -L creation_method,env
 NAME              READY   STATUS    RESTARTS   AGE    CREATION_METHOD   ENV
 kubia-manual      1/1     Running   0          44m                      
 kubia-manual-v2   1/1     Running   0          2m8s   manual            prod
@@ -322,33 +335,33 @@ kubia-sw7cq       1/1     Running   0          28s
 
 
 
-➜  yaml_files git:(master) ✗ k label po kubia-manual creation_method=manual
+k label po kubia-manual creation_method=manual
 pod/kubia-manual labeled
 
 
-➜  yaml_files git:(master) ✗ k label po kubia-manual-v2 env=debug --overwrite 
+k label po kubia-manual-v2 env=debug --overwrite 
 pod/kubia-manual-v2 labeled
 
 
-➜  yaml_files git:(master) ✗ kg po -L creation_method,env
+kg po -L creation_method,env
 NAME              READY   STATUS    RESTARTS   AGE     CREATION_METHOD   ENV
 kubia-manual      1/1     Running   0          51m     manual            
 kubia-manual-v2   1/1     Running   0          9m31s   manual            debug
 kubia-sw7cq       1/1     Running   0          7m51s    
 
        
-➜  yaml_files git:(master) ✗ kg po -l creation_method=manual
+kg po -l creation_method=manual
 NAME              READY   STATUS    RESTARTS   AGE
 kubia-manual      1/1     Running   0          56m
 kubia-manual-v2   1/1     Running   0          14m
-➜  yaml_files git:(master) ✗    
+   
 
 
-➜  yaml_files git:(master) ✗ kg po -l env
+kg po -l env
 NAME              READY   STATUS    RESTARTS   AGE
 kubia-manual-v2   1/1     Running   0          14m
-➜  yaml_files git:(master) ✗ 
-➜  yaml_files git:(master) ✗ kg po -l '!env'   
+
+kg po -l '!env'   
 NAME           READY   STATUS    RESTARTS   AGE
 kubia-manual   1/1     Running   0          57m
 kubia-sw7cq    1/1     Running   0          14m
@@ -376,7 +389,7 @@ gke-kubia-default-pool-75d2dcc5-kq4k   Ready    <none>   38m   v1.14.10-gke.27
 
 
 
-➜  yaml_files git:(master) ✗ k create -f kubia-gpu.yaml -n default
+k create -f kubia-gpu.yaml -n default
 pod/kubia-gpu created
 <!-- 
 apiVersion: v1
@@ -397,25 +410,25 @@ kubia-gpu         1/1     Running   0          3s
 .......
 
 
-➜  yaml_files git:(master) ✗ k annotate po kubia-manual mycompany.com/someannotation="BadAss Shoshone"
+k annotate po kubia-manual mycompany.com/someannotation="BadAss Shoshone"
 pod/kubia-manual annotated
 
 
-➜  yaml_files git:(master) ✗ kd po kubia-manual      
+kd po kubia-manual      
 
 Annotations:  kubernetes.io/limit-ranger: LimitRanger plugin set: cpu request for container kubia
               mycompany.com/someannotation: BadAss Shoshone
 
 
-➜  yaml_files git:(master) ✗ kg ns
+kg ns
 NAME              STATUS   AGE
 default           Active   2d1h
 kube-node-lease   Active   2d1h
 kube-public       Active   2d1h
 kube-system       Active   2d1h
-➜  yaml_files git:(master) ✗ 
-➜  yaml_files git:(master) ✗ 
-➜  yaml_files git:(master) ✗ kg po -n kube-system
+
+
+kg po -n kube-system
 NAME                                                        READY   STATUS    RESTARTS   AGE
 event-exporter-v0.2.5-7df89f4b8f-hb9wr                      2/2     Running   0          2d1h
 fluentd-gcp-scaler-54ccb89d5-t5v48                          1/1     Running   0          2d1h
@@ -439,52 +452,53 @@ stackdriver-metadata-agent-cluster-level-744c9bbf67-d25wg   2/2     Running   0 
 
 # create a custom namespace via YAML
 
-➜  yaml_files git:(master) ✗ k create -f  custome-namespace.yaml
+k create -f  custome-namespace.yaml
 namespace/custom-namespace created
 <!-- 
 apiVersion: v1
 kind: Namespace
 metadata:
   name: custom-namespace% 
+-->
 
-➜  yaml_files git:(master) ✗ kg ns
+kg ns
 NAME               STATUS   AGE
 custom-namespace   Active   3s
 default            Active   2d1h
 kube-node-lease    Active   2d1h
 kube-public        Active   2d1h
-kube-system        Active   2d1h -->
+kube-system        Active   2d1h 
 
 
-➜  yaml_files git:(master) ✗ k create -f kubia-manual.yaml -n custom-namespace
+k create -f kubia-manual.yaml -n custom-namespace
 pod/kubia-manual created
 
-➜  yaml_files git:(master) ✗ kg po -n custom-namespace
+kg po -n custom-namespace
 NAME           READY   STATUS    RESTARTS   AGE
 kubia-manual   1/1     Running   0          11s
 
 # Deleting Pods and namespaces
 
-➜  yaml_files git:(master) ✗ kdel po kubia-gpu
+kdel po kubia-gpu
 pod "kubia-gpu" deleted
-➜  yaml_files git:(master) ✗ 
 
- delete pods with label selectors
 
-➜  yaml_files git:(master) ✗ kdel po -l creation_method=manual
+# delete pods with label selectors
+
+kdel po -l creation_method=manual
 pod "kubia-manual" deleted
 pod "kubia-manual-v2" deleted
 
 delete pods by deleting the whole namespace
 
-➜  yaml_files git:(master) ✗ kdel ns custom-namespace
+kdel ns custom-namespace
 namespace "custom-namespace" deleted
 
-➜  yaml_files git:(master) ✗ kg po
+kg po
 NAME          READY   STATUS    RESTARTS   AGE
 kubia-sw7cq   1/1     Running   0          90m
 
-➜  yaml_files git:(master) ✗ kdel po --all
+kdel po --all
 pod "kubia-sw7cq" deleted
 
 ➜  kubernetes_in_action kg po
@@ -493,16 +507,16 @@ kubia-k492d   1/1     Running       0          12s
 kubia-sw7cq   1/1     Terminating   0          91m
 
 
-➜  yaml_files git:(master) ✗ kg po
+kg po
 NAME          READY   STATUS    RESTARTS   AGE
 kubia-k492d   1/1     Running   0          40s
 
-➜  yaml_files git:(master) ✗ kdel all --all
+kdel all --all
 pod "kubia-k492d" deleted
 replicationcontroller "kubia" deleted
 service "kubernetes" deleted
 
-➜  yaml_files git:(master) ✗ kg po
+kg po
 No resources found in default namespace.
 
 ### Delete everything and move on
@@ -528,7 +542,7 @@ spec:
            -->
           
           
-➜  yaml_files git:(master) ✗ kg po
+kg po
 NAME             READY   STATUS    RESTARTS   AGE
 kubia-liveness   1/1     Running   0          89s
   
@@ -539,13 +553,13 @@ kd po
 
 
 
-➜  yaml_files git:(master) ✗ kg po
+kg po
 NAME             READY   STATUS    RESTARTS   AGE
 kubia-liveness   1/1     Running   1          2m35s  <===== RESTARTS
 
 
 
-➜  yaml_files git:(master) ✗ k logs kubia-liveness --previous 
+k logs kubia-liveness --previous 
 Kubia server starting...
 Received request from ::ffff:10.48.2.1
 Received request from ::ffff:10.48.2.1
@@ -558,14 +572,14 @@ Received request from ::ffff:10.48.2.1
 
 
 
-  yaml_files git:(master) ✗ kd po kubia-liveness | grep -Ei "last state" | awk '{print $1 "  " $2 " "  $3 "    " $4}'        
+kd po kubia-liveness | grep -Ei "last state" | awk '{print $1 "  " $2 " "  $3 "    " $4}'        
 Last  State: Terminated    
-➜  yaml_files git:(master) ✗ kd po kubia-liveness | grep -Ei reason: | awk '{print $1 "  " $2 }'             
+kd po kubia-liveness | grep -Ei reason: | awk '{print $1 "  " $2 }'             
 Reason:  Error
 
 kdel po --all
 
-✗ k create -f  kubia-liveness-probe-initial-delay.yaml -n default
+k create -f  kubia-liveness-probe-initial-delay.yaml -n default
 <!-- 
 apiVersion: v1
 kind: Pod 
@@ -582,7 +596,7 @@ spec:
           initialDelaySeconds: 15
              -->
 
-➜  yaml_files git:(master) ✗ kg po
+kg po
 NAME             READY   STATUS             RESTARTS   AGE
 kubia-liveness   0/1     CrashLoopBackOff   6          13m
 
@@ -598,7 +612,7 @@ kubia-liveness   1/1     Running   0          10s
 
 
 
-  yaml_files git:(master) ✗ kd po | grep -Ei liveness
+ kd po | grep -Ei liveness
 Name:         kubia-liveness
     Liveness:     http-get http://:8080/ delay=15s timeout=1s period=10s #success=1 #failure=3
   Normal   Scheduled  2m                 default-scheduler                                Successfully assigned default/kubia-liveness to gke-jaykube-default-pool-5886fede-bqds
@@ -630,13 +644,13 @@ spec:
           - containerPort: 8080 -->
 
 
-➜  yaml_files git:(master) ✗ kg rc
+kg rc
 NAME    DESIRED   CURRENT   READY   AGE
 kubia   3         3         3       59s
 
 
 
-➜  yaml_files git:(master) ✗ kg po
+kg po
 NAME             READY   STATUS    RESTARTS   AGE
 kubia-24j2q      1/1     Running   0          4s
 kubia-dcq2c      1/1     Running   0          4s
@@ -645,7 +659,7 @@ kubia-wbqxk      1/1     Running   0          4s
 
 
 
-➜  yaml_files git:(master) ✗ kdel po kubia-24j2q kubia-wbqxk
+kdel po kubia-24j2q kubia-wbqxk
 pod "kubia-24j2q" deleted
 pod "kubia-wbqxk" deleted
 
@@ -673,7 +687,7 @@ kubia-liveness   1/1     Running   4          9m41s
 
 # Introduce some Chaos - take down a node
 
-➜  yaml_files git:(master) ✗ gcloud compute ssh gke-jaykube-default-pool-5886fede-bqds
+gcloud compute ssh gke-jaykube-default-pool-5886fede-bqds
 
 
 jeremy@gke-jaykube-default-pool-5886fede-bqds ~ $ sudo ifconfig eth0 down
@@ -703,7 +717,7 @@ kubia-liveness   1/1     Running             11         28m
 
 
 
-➜  ~ gcloud compute instances reset gke-jaykube-default-pool-5886fede-s8nn
+# gcloud compute instances reset gke-jaykube-default-pool-5886fede-s8nn
 
 ➜  DevStudy git:(master) ✗ kg no
 NAME                                     STATUS   ROLES    AGE   VERSION
@@ -928,6 +942,10 @@ k label node <node>  disk=ssd  # make a script to automate
 ➜  ~ k label node gke-jaykube-default-pool-5886fede-bqds disk=ssd
 node/gke-jaykube-default-pool-5886fede-bqds labeled
 
+k label node gke-kubia-default-pool-13476f38-fvjr gke-kubia-default-pool-13476f38-kl8v disk=ssd
+node/gke-kubia-default-pool-13476f38-fvjr labeled
+node/gke-kubia-default-pool-13476f38-kl8v labeled
+
 
 ➜  ~ kg po
 NAME                READY   STATUS    RESTARTS   AGE
@@ -1009,7 +1027,7 @@ Sat Apr 25 21:05:46 UTC 2020 Finished succesfully
 
 
 
-# Run Jobs in sequentially - This is optional if you have the time if not go to parallel
+# Run Jobs in sequentially - This is a optional if you have the time if not go to parallel
 
 ➜  ~ k create -f  multi-completion-batch-job.yaml -n default
 job.batch/multi-completion-batch-job created
@@ -1243,7 +1261,7 @@ batch-job-every-2-mins-1587850800-r97k8   1/1     Running   0          11s
 
 # Cron Job with deadline
 
-➜  yaml_files git:(master) ✗ k create -f cronjob_deadline.yaml -n default
+k create -f cronjob_deadline.yaml -n default
 cronjob.batch/batch-job-every-2-mins-deadline created
 <!-- 
 
@@ -1423,7 +1441,7 @@ kg no -o jsonpath='{.items[*].status.addresses[?(@.type=="ExternalIP")].address}
 54.85.96.174 3.234.222.45 18.206.81.24
 
 
-[jeremy@eks_course kube_yaml_files]$ curl -v -k 54.85.96.174:30123
+curl -v -k 54.85.96.174:30123
 * About to connect() to 54.85.96.174 port 30123 (#0)
 *   Trying 54.85.96.174...
 * Connected to 54.85.96.174 (54.85.96.174) port 30123 (#0)
@@ -1574,6 +1592,8 @@ Data
 tls.crt:  1115 bytes
 tls.key:  1675 bytes
 ~                          
+
+
 
 ❯ curl -k -v https://kubia.example.com/     
 * About to connect() to kubia.example.com port 443 (#0)
@@ -2053,8 +2073,9 @@ Events:
   ----     ------            ----               ----               -------
   Warning  FailedScheduling  19s (x2 over 19s)  default-scheduler  persistentvolumeclaim "mongodb-pvc" not found
 
-
+kdel po mongodb
 kdel pv --all
+kdel pvc --all
 
                
                                                                                ○ jaykube
@@ -2603,7 +2624,8 @@ server {
 
 ❯ cat configmap-files/sleep-interval
 <!-- 
-25 -->
+25
+ -->
 
 
 kdel configmap fortune-config
@@ -2725,6 +2747,8 @@ metadata:
 ~                                                                                                                                      
 ❯   -->
 
+k create -f fortune-pod-confimgmap-volume.yaml -n default
+pod/fortune-configmap-volume created
 
 
 
