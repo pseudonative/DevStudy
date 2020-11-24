@@ -1,3 +1,30 @@
+# ADHOC Commands:
+kubectl run nginx-pod --image=nginx:alpine
+
+kubectl run redis --image=redis:alpine --labels=tier=db
+
+kubectl expose pod redis --name redis-service --port 6379 --target-port 6379
+
+kubectl create deployment webapp --image=kodekloud/webapp-color
+
+kubectl scale deployment --replicas=3 webapp
+
+kubectl run custom-nginx --image=nginx --port 8080
+
+kubectl create ns dev-ns
+
+kubectl create deployment redis-deploy --image=redis --namespace=dev-ns --dry-run=true -oyaml > deploy.yaml
+
+code deploy.yaml
+
+add replicas: 2
+
+kubectl apply -f deploy.yaml
+
+kubectl run httpd --image=httpd:alpine --port 80 --expose --dry-run=client -oyaml
+
+kdel all --all
+
 # This document is to be done everyday for repetition study
 # Try to throw the cluster up the night before - saves time
 # maybe even run 2 or 3 clusters, to practice moving between clusters
@@ -46,6 +73,7 @@ nodeGroups:
 
 
 # after cluster is built or if built on another workstation
+gcloud container clusters list
 
 gcloud container clusters get-credentials <name> 
 
@@ -811,7 +839,7 @@ kubia-s4jtm   1/1     Running   0          9m5s
 ➜  ~ k create -f kubia-replicaset.yaml -n default
 replicaset.apps/kubia created
 <!-- 
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
   name: kubia
@@ -906,7 +934,7 @@ replicaset.extensions "kubia" deleted
 ➜  ~ k create  -f ssd-monitor-daemonset.yaml -n default
 daemonset.apps/ssd-monitor created
 <!-- 
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: ssd-monitor 
@@ -1749,7 +1777,7 @@ spec:
     emptyDir: {}
      -->
 
-
+# alias kpf
 k port-forward fortune 8888:80
 Forwarding from 127.0.0.1:8888 -> 80
 Forwarding from [::1]:8888 -> 80
@@ -1883,7 +1911,7 @@ jaykube  us-central1-a  1.14.10-gke.27  34.69.76.133  n1-standard-1  1.14.10-gke
 ~                                                                                                            
 
 
-❯ gcloud compute disks create --size=1Gib --zone=us-central1-a mongodb
+❯ gcloud compute disks create --size=10GB --zone=us-central1-a mongodb
 
 NAME     ZONE           SIZE_GB  TYPE         STATUS
 mongodb  us-central1-a  1        pd-standard  READY
@@ -2162,6 +2190,7 @@ kdel po mongodb
 ❯ kdel pvc --all
 persistentvolumeclaim "mongodb-pvc" deleted
 
+# PVC may get stuck - kubectl patch pvc mongodb-pvc {"metadata":{"finalizers":null}}
 
 ❯ kdel pv --all
 persistentvolume "mongodb-pv" deleted
@@ -3245,12 +3274,15 @@ deployment.apps/kubia created
 
 
 <!-- 
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment 
 metadata:
   name: kubia 
 spec:
   replicas: 3
+  selector:
+    matchLabels:
+      app: kubia
   template: 
     metadata:
       name: kubia 
