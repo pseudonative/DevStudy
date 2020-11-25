@@ -3,6 +3,8 @@ kubectl run nginx-pod --image=nginx:alpine
 
 kubectl run redis --image=redis:alpine --labels=tier=db
 
+kubectl get pods --show-labels
+
 kubectl expose pod redis --name redis-service --port 6379 --target-port 6379
 
 kubectl create deployment webapp --image=kodekloud/webapp-color
@@ -2943,7 +2945,8 @@ kind: Secret
 k create configmap fortune-config-ssl --from-file=/home/jeremy/DevStudy/yaml_files/configmap-files/ssl
 
 
-~/DevStudy/yaml_files/configmap-files/ssl                                
+# launch from this directory - gonna have to scale up nodes or delete existing pods
+# ~/DevStudy/yaml_files/configmap-files/ssl                                
 ❯ k create -f fortune-pod-configmap-volume.yaml
 pod/fortune-configmap-volume-ssl created
 <!-- 
