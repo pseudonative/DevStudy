@@ -3701,6 +3701,8 @@ Waiting for deployment "kubia" rollout to finish: 1 old replicas are pending ter
 deployment "kubia" successfully rolled out
 ~                                        
 
+# Stateful Sets
+
 
 
 
