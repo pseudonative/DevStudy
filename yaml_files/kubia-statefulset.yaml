@@ -1,0 +1,35 @@
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kubia
+spec:
+  selector:
+    matchLabels:
+      app: kubia 
+  serviceName: kubia
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: kubia 
+    spec:
+      containers:
+      - name: kubia
+        image: luksa/kubia-pet
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: kubia
+          mountPath: /var/data
+        
+  volumeClaimTemplates:
+  - metadata:
+      name: kubia
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Mi
+          

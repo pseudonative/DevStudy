@@ -1,0 +1,11 @@
+
+module my-systemdmachine 1.0;
+
+require {
+	type systemd_machined_t;
+	type svirt_t;
+	class dir search;
+}
+
+#============= systemd_machined_t ==============
+allow systemd_machined_t svirt_t:dir search;
