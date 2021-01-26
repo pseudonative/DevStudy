@@ -3499,7 +3499,7 @@ spec:
 
 k edit statefulsets kubia
 
-k patch statefulsets kubia -p '{"spec":{"replicas":20}}'
+k patch statefulsets kubia -p '{"spec":{"replicas":20}}' just to see what happens, otherwise scale to 10
 
 k apply -f kubia-statefulset.yaml -- sets it back to 2
 
