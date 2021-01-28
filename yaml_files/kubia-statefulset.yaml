@@ -18,15 +18,15 @@ spec:
       - name: kubia
         image: luksa/kubia-pet
         ports:
-        - containerPort: 80
+        - containerPort: 8080
           name: http
         volumeMounts:
-        - name: kubia
+        - name: data
           mountPath: /var/data
         
   volumeClaimTemplates:
   - metadata:
-      name: kubia
+      name: data
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:

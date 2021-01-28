@@ -3506,3 +3506,119 @@ k apply -f kubia-statefulset.yaml -- sets it back to 2
 ## if more compute is needed
 
 gcloud container clusters resize kubia --node-pool default-pool --num-nodes 5
+
+kubectl proxy
+
+# ❯ curl 127.0.0.1:8001/api/v1/namespaces/default/pods/kubia-0/proxy/
+
+You've hit kubia-0
+Data stored on this pod: No data posted yet
+~/DevStudy/yaml_files master !1 ≡ Node system
+
+# ❯ curl -X POST -d "Hey there! This greeting was submitted to kubia-0." 127.0.0.1:8001/api/v1/namespaces/default/pods/kubia-0/proxy/
+
+Data stored on pod kubia-0
+~/DevStudy/yaml_files master !1 ≡ Node system
+
+# ❯ curl 127.0.0.1:8001/api/v1/namespaces/default/pods/kubia-0/proxy/
+
+You've hit kubia-0
+Data stored on this pod: Hey there! This greeting was submitted to kubia-0.
+
+## Check the other pod
+
+curl 127.0.0.1:8001/api/v1/namespaces/default/pods/kubia-1/proxy/
+You've hit kubia-1
+Data stored on this pod: No data posted yet
+
+## Delete the kubia-0 pod to test if pv pvc is reattached
+
+❯ kdel po kubia-0
+pod "kubia-0" deleted
+
+# ❯ curl 127.0.0.1:8001/api/v1/namespaces/default/pods/kubia-0/proxy/
+
+You've hit kubia-0
+Data stored on this pod: Hey there! This greeting was submitted to kubia-0.
+
+k create -f kubia-service-public.yaml
+service/kubia-public created
+~/DevStudy/yaml_files master !2 ?1 ≡ Node system ○ kubia
+❯ kg svc
+NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE
+kubernetes ClusterIP 10.55.240.1 <none> 443/TCP 31m
+kubia-public ClusterIP 10.55.249.16 <none> 80/TCP 2s
+
+<!-- apiVersion: v1
+kind: Service
+metadata:
+  name: kubia-public
+spec:
+  selector:
+    app: kubia
+  ports:
+  - port: 80
+    targetPort: 8080 -->
+
+# ❯ curl 127.0.0.1:8001/api/v1/namespaces/default/services/kubia-public/proxy/
+
+You've hit kubia-0
+Data stored on this pod: Hey there! This greeting was submitted to kubia-0.
+
+k run -it srvlookup --image=tutum/dnsutils --rm --restart=Never -- dig SRV kubia.default.svc.cluster.local
+
+# ❯ k run -it srvlookup --image=tutum/dnsutils --rm --restart=Never -- dig SRV kubia.default.svc.cluster.local
+
+; <<>> DiG 9.9.5-3ubuntu0.2-Ubuntu <<>> SRV kubia.default.svc.cluster.local
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 54812
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;kubia.default.svc.cluster.local. IN SRV
+
+;; AUTHORITY SECTION:
+cluster.local. 60 IN SOA ns.dns.cluster.local. hostmaster.cluster.local. 1611799200 28800 7200 604800 60
+
+;; Query time: 3 msec
+;; SERVER: 10.55.240.10#53(10.55.240.10)
+;; WHEN: Thu Jan 28 02:47:32 UTC 2021
+;; MSG SIZE rcvd: 142
+
+pod "srvlookup" deleted
+
+❯ k edit statefulset kubia
+
+## add replicas: 3 and image: kubia-pet-peers
+
+statefulset.apps/kubia edited
+~/DevStudy/yaml_files master !2 ?1  
+ 41s ≡ Node system ○ kubia
+❯ kdel po kubia-0 kubia-1
+pod "kubia-0" deleted
+pod "kubia-1" deleted
+
+❯ curl -X POST -d "The sun is shining" 127.0.0.1:8001/api/v1/namespaces/default/services/kubia-public/proxy/
+Data stored on pod kubia-1
+
+~/DevStudy/yaml_files master !2 ?1 ≡ Node system
+❯ curl -X POST -d "The weather is sweet" 127.0.0.1:8001/api/v1/namespaces/default/services/kubia-public/proxy/
+Data stored on pod kubia-0
+
+❯ gcloud compute ssh gke-kubia-default-pool-7d97e47e-wzhp
+Warning: Permanently added 'compute.2459818272875324354' (ED25519) to the list of known hosts.
+
+jeremy@gke-kubia-default-pool-7d97e47e-wzhp ~ $
+jeremy@gke-kubia-default-pool-7d97e47e-wzhp ~ $ sudo ifconfig eth0 down
+
+kdel po kubia-1 --force --grace-period 0
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+pod "kubia-1" force deleted
+
+kg po
+NAME READY STATUS RESTARTS AGE
+kubia-0 1/1 Running 0 18m
+kubia-1 0/1 ContainerCreating 0 72s
+
+gcloud compute instances reset gke-kubia-default-pool-7d97e47e-wzhp
