@@ -1,4 +1,5 @@
 # ADHOC Commands:
+kubectl run redis --image=redis123 --dry-run=client -oyaml > pod.yaml
 
 kubectl run nginx-pod --image=nginx:alpine
 
@@ -120,7 +121,7 @@ spec:
       - name: kubia
         image: luksa/kubia
         ports:
-        - containerPort: 8080%                    -->
+        - containerPort: 8080                    -->
 
 # in another terminal window
 
