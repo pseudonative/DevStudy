@@ -1,3 +1,4 @@
+============== Monday =============================
 # ADHOC Commands:
 kubectl run redis --image=redis123 --dry-run=client -oyaml > pod.yaml
 
@@ -527,7 +528,7 @@ kg po
 No resources found in default namespace.
 
 ### Delete everything and move on
-
+============== Tuesday =============================
 # create POD with liveness probe
 
 k create -f kubia-liveness-probe.yaml -n default
