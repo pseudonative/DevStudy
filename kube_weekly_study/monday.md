@@ -528,3 +528,12 @@ kg po
 No resources found in default namespace.
 
 ### Delete everything and move on
+
+# Kode Kloud
+##pods
+https://kodekloud.com/courses/certified-kubernetes-administrator-with-practice-tests-labs/lectures/12038860
+
+##ReplicaSets
+https://kodekloud.com/courses/certified-kubernetes-administrator-with-practice-tests-labs/lectures/12038862
+
+
