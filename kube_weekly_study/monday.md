@@ -536,4 +536,6 @@ https://kodekloud.com/courses/certified-kubernetes-administrator-with-practice-t
 ##ReplicaSets
 https://kodekloud.com/courses/certified-kubernetes-administrator-with-practice-tests-labs/lectures/12038862
 
+https://kubernetes.io/docs/reference/kubectl/conventions/
+
 
