@@ -3624,3 +3624,628 @@ kubia-0 1/1 Running 0 18m
 kubia-1 0/1 ContainerCreating 0 72s
 
 gcloud compute instances reset gke-kubia-default-pool-7d97e47e-wzhp
+
+
+## Service Accounts
+
+❯ k create serviceaccount foo --dry-run=true -oyaml 
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: foo
+
+
+~/DevStudy/practice_adhoc master !1 ?1
+○ kubia
+
+
+❯ k create serviceaccount foo
+serviceaccount/foo created
+
+
+~/DevStudy/practice_adhoc master !1 ?1                                                                                                                                                                                                 ○ kubia
+❯ kd sa foo
+Name:                foo
+Namespace:           default
+Labels:              <none>
+Annotations:         <none>
+Image pull secrets:  <none>
+Mountable secrets:   foo-token-mgkc7
+Tokens:              foo-token-mgkc7
+Events:              <none>
+
+
+❯ kd secret foo-token-mgkc7
+Name:         foo-token-mgkc7
+Namespace:    default
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: foo
+              kubernetes.io/service-account.uid: 0cf57ac1-76b0-4f6b-84d2-376b7ca33905
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+ca.crt:     1159 bytes
+namespace:  7 bytes
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IlVoZWdFSlJFT0xFQUJnSl9CTXNneWppelpDT05hRUxXWlUtbXFWaXhkSlkifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImZvby10b2tlbi1tZ2tjNyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJmb28iLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIwY2Y1N2FjMS03NmIwLTRmNmItODRkMi0zNzZiN2NhMzM5MDUiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6ZGVmYXVsdDpmb28ifQ.Bd3MKZfCVjUOLtu_y6XqFbGpIaSX2PDOKPfiLLddbff5LVzxBf8jciFJV8CL6CyRUK5NWrYr_mGPX87BbdKmZvfTMg2tJJY3G67D4WFk3EaMcNi6VQKD1eaDp5BzJvgBuuKWikOlQPdXT9X0LJ0Nxg-y85d-EzHgjJdtahc8TgzUzteYDWm5q7UV9OeOoCv2vplxgvtnBz8YwzrkACKZpgGmdqUH1hL7z8jE_gO5Lf_RAF9Pg0j60X5JKhuKmU36DO8OYyIxdjSIixR5xYqJVYAqodwok_ZRxqcx3n7KfnMQTXHweAFZV3jAs80ce4gO3kpxnClw8LeVcxz_jhxxYw
+
+
+❯ k create serviceaccount my-service-accunt --dry-run=true -oyaml 
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: my-service-accunt
+~/DevStudy/yaml_files master !1                                                                                                                                                                                                        ○ kubia
+❯ k create serviceaccount my-service-accunt --dry-run=true -oyaml > sa-image-pull-secrets.yaml
+~/DevStudy/yaml_files master !1 ?1                                                                                                                                                                                                     ○ kubia
+❯ kap sa-image-pull-secrets.yaml 
+serviceaccount/my-service-accunt created
+~/DevStudy/yaml_files master !1 ?1                                                                                                                                                                                                            
+❯ 
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: my-service-accunt
+imagePullSecrets:
+- name: my-docker-hub-secret
+
+  
+~/DevStudy/yaml_files master !1 ?2                                                                                                                                                                                                     ○ kubia
+❯ kap curl-custom-sa.yaml
+pod/curl-custom-sa created
+
+~/DevStudy/yaml_files master !1 ?2                                                                                                                                                                                                     ○ kubia
+❯ kg sa
+NAME                SECRETS   AGE
+default             1         6h42m
+foo                 1         19m
+my-service-accunt   1         11m
+~/DevStudy/yaml_files master !1 ?2                                                                                                                                                                                                            
+❯ 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-custom-sa
+spec:
+  serviceAccountName: foo
+  containers:
+    - name: main
+      image: tutum/curl
+      command: ["sleep", "9999999"]
+    - name: ambassador
+      image: luksa/kubectl-proxy:1.6.2
+
+
+❯ k exec -it curl-custom-sa -c main cat /var/run/secrets/kubernetes.io/serviceaccount/token
+eyJhbGciOiJSUzI1NiIsImtpZCI6IlVoZWdFSlJFT0xFQUJnSl9CTXNneWppelpDT05hRUxXWlUtbXFWaXhkSlkifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImZvby10b2tlbi1tZ2tjNyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJmb28iLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIwY2Y1N2FjMS03NmIwLTRmNmItODRkMi0zNzZiN2NhMzM5MDUiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6ZGVmYXVsdDpmb28ifQ.Bd3MKZfCVjUOLtu_y6XqFbGpIaSX2PDOKPfiLLddbff5LVzxBf8jciFJV8CL6CyRUK5NWrYr_mGPX87BbdKmZvfTMg2tJJY3G67D4WFk3EaMcNi6VQKD1eaDp5BzJvgBuuKWikOlQPdXT9X0LJ0Nxg-y85d-EzHgjJdtahc8TgzUzteYDWm5q7UV9OeOoCv2vplxgvtnBz8YwzrkACKZpgGmdqUH1hL7z8jE_gO5Lf_RAF9Pg0j60X5JKhuKmU36DO8OYyIxdjSIixR5xYqJVYAqodwok_ZRxqcx3n7KfnMQTXHweAFZV3jAs80ce4gO3kpxnClw8LeVcxz_jhxxYw%                                                                       ~/DevStudy/yaml_files master !1 ?2 
+
+
+❯ k exec -it curl-custom-sa -c main curl localhost:8001/api/v1/pods
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+    
+  },
+  "status": "Failure",
+  "message": "pods is forbidden: User \"system:serviceaccount:default:foo\" cannot list resource \"pods\" in API group \"\" at the cluster scope",
+  "reason": "Forbidden",
+  "details": {
+    "kind": "pods"
+  },
+  "code": 403
+}
+
+kdel clusterrolebinding permissive-binding
+
+❯ k create ns foo
+namespace/foo created
+~/DevStudy/yaml_files master !1 ?2                                                                                                                                                                                                     ○ kubia
+❯ k run test --image=luksa/kubectl-proxy -n foo --dry-run=true -oyaml
+kubectl run --generator=deployment/apps.v1 is DEPRECATED and will be removed in a future version. Use kubectl run --generator=run-pod/v1 or kubectl create instead.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    run: test
+  name: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: test
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: test
+    spec:
+      containers:
+      - image: luksa/kubectl-proxy
+        name: test
+        resources: {}
+status: {}
+
+
+❯ kg ns
+NAME              STATUS   AGE
+default           Active   6h49m
+foo               Active   52s
+kube-node-lease   Active   6h49m
+kube-public       Active   6h49m
+kube-system       Active   6h49m
+
+
+~/DevStudy/yaml_files master !1 ?2○ kubia
+❯ kg po -n foo
+NAME                   READY   STATUS    RESTARTS   AGE
+test-bf9d475cc-nmrr5   1/1     Running   0          11s
+~/DevStudy/yaml_files master !1 ?2       
+
+
+
+❯ k run test --image=luksa/kubectl-proxy -n bar --dry-run=true -oyaml
+kubectl run --generator=deployment/apps.v1 is DEPRECATED and will be removed in a future version. Use kubectl run --generator=run-pod/v1 or kubectl create instead.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    run: test
+  name: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: test
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: test
+    spec:
+      containers:
+      - image: luksa/kubectl-proxy
+        name: test
+        resources: {}
+status: {}
+
+
+❯ kg ns | grep bar
+bar               Active   44s
+~/DevStudy/yaml_files master !1 ?2                                                                                                                                                                                                     ○ kubia
+❯ kg po -n bar 
+NAME                   READY   STATUS    RESTARTS   AGE
+test-bf9d475cc-8vc9p   1/1     Running   0          13s
+
+
+❯ k exec -it test-bf9d475cc-nmrr5 -n foo sh
+/ # curl localhost:8001/api/v1/namespaces/foo/services
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+    
+  },
+  "status": "Failure",
+  "message": "services is forbidden: User \"system:serviceaccount:foo:default\" cannot list resource \"services\" in API group \"\" in the namespace \"foo\"",
+  "reason": "Forbidden",
+  "details": {
+    "kind": "services"
+  },
+  "code": 403
+}/ # 
+
+
+❯ kg po -n bar
+NAME                   READY   STATUS    RESTARTS   AGE
+test-bf9d475cc-8vc9p   1/1     Running   0          100s
+~                                                                                                                               ○ kubia
+❯ k exec -it test-bf9d475cc-8vc9p -n bar sh
+/ # curl localhost:8001/api/v1/namespaces/bar/services
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+    
+  },
+  "status": "Failure",
+  "message": "services is forbidden: User \"system:serviceaccount:bar:default\" cannot list resource \"services\" in API group \"\" in the namespace \"bar\"",
+  "reason": "Forbidden",
+  "details": {
+    "kind": "services"
+  },
+  "code": 403
+}/ # 
+
+
+❯ kap service-reader.yaml -n foo
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: foo
+  name: service-reader
+rules:
+- apiGroups: [""]
+  verbs: ["get","list"]
+  resources: ["services"]
+  
+## Create the Role Binding
+❯ k create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=your.email@address.com --dry-run=true -oyaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: null
+  name: cluster-admin-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: your.email@address.com
+
+## Create the Role
+❯ k create role service-reader --verb=get --verb=list --resource=service -n bar --dry-run=true -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: service-reader
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+
+## Bind the Role to Service Account
+k create rolebinding test --role=service-reader --serviceaccount=foo:default -n foo --dry-run=true -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: null
+  name: test
+  namespace: foo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: service-reader
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: foo
+
+
+kg rolebinding test -n foo -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: "2021-03-08T02:37:23Z"
+  managedFields:
+  - apiVersion: rbac.authorization.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:roleRef:
+        f:apiGroup: {}
+        f:kind: {}
+        f:name: {}
+      f:subjects: {}
+    manager: kubectl
+    operation: Update
+    time: "2021-03-08T02:37:23Z"
+  name: test
+  namespace: foo
+  resourceVersion: "161302"
+  selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/foo/rolebindings/test
+  uid: 0be7d9c7-98bd-479b-9382-e0f0a5b2cc13
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: service-reader
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: foo
+
+
+  curl localhost:8001/api/v1/namespaces/foo/services
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+    
+  },
+  "status": "Failure",
+  "message": "services is forbidden: User \"system:serviceaccount:foo:default\" cannot list resource \"services\" in API group \"\" in the namespace \"foo\"",
+  "reason": "Forbidden",
+  "details": {
+    "kind": "services"
+  },
+  "code": 403
+}/ # 
+/ # 
+/ # curl localhost:8001/api/v1/namespaces/foo/services
+{
+  "kind": "ServiceList",
+  "apiVersion": "v1",
+  "metadata": {
+    "selfLink": "/api/v1/namespaces/foo/services",
+    "resourceVersion": "161858"
+  },
+  "items": []
+}/
+
+## from bar namespace
+ curl localhost:8001/api/v1/namespaces/foo/services
+{
+  "kind": "ServiceList",
+  "apiVersion": "v1",
+  "metadata": {
+    "selfLink": "/api/v1/namespaces/foo/services",
+    "resourceVersion": "162651"
+  },
+  "items": []
+}
+
+## allow access to cluster level resources
+
+k create clusterrole pv-reader --verb=get,list --resource=persistentvolumes --dry-run=true -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: pv-reader
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+
+kg clusterrole pv-reader -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: "2021-03-08T02:43:36Z"
+  managedFields:
+  - apiVersion: rbac.authorization.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:rules: {}
+    manager: kubectl
+    operation: Update
+    time: "2021-03-08T02:43:36Z"
+  name: pv-reader
+  resourceVersion: "163523"
+  selfLink: /apis/rbac.authorization.k8s.io/v1/clusterroles/pv-reader
+  uid: 630bb02c-7450-469a-a639-42ab3c8e4bd2
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+
+## bind cluster role and service account
+k create rolebinding pv-test --clusterrole=pv-reader --serviceaccount=foo:default -n foo --dry-run=true -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: null
+  name: pv-test
+  namespace: foo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pv-reader
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: foo
+
+
+kdel rolebinding pv-test -n foo
+rolebinding.rbac.authorization.k8s.io "pv-test" deleted
+
+
+k create clusterrolebinding pv-test --clusterrole=pv-reader --serviceaccount=foo:default --dry-run=true -oyaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: null
+  name: pv-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pv-reader
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: foo
+
+## now works
+/ # curl localhost:8001/api/v1/persistentvolumes
+{
+  "kind": "PersistentVolumeList",
+  "apiVersion": "v1",
+  "metadata": {
+    "selfLink": "/api/v1/persistentvolumes",
+    "resourceVersion": "165948"
+  },
+  "items": []
+}/ # 
+
+
+kg clusterrole system:discovery -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+--------
+  name: system:discovery
+--------
+rules:
+- nonResourceURLs:
+  - /api
+  - /api/*
+  - /apis
+  - /apis/*
+  - /healthz
+  - /livez
+  - /openapi
+  - /openapi/*
+  - /readyz
+  - /version
+  - /version/
+  verbs:
+  - get
+
+
+
+kg clusterrolebinding system:discovery -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  creationTimestamp: "2021-03-07T19:12:46Z"
+  labels:
+    kubernetes.io/bootstrapping: rbac-defaults
+  managedFields:
+
+## before any bindings
+
+/ # curl localhost:8001/api/v1/pods
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+    
+  },
+  "status": "Failure",
+  "message": "pods is forbidden: User \"system:serviceaccount:foo:default\" cannot list resource \"pods\" in API group \"\" at the cluster scope",
+  "reason": "Forbidden",
+  "details": {
+    "kind": "pods"
+  },
+  "code": 403
+}/ # 
+
+
+
+/ # curl localhost:8001/api/v1/namespaces/foo/pods
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+    
+  },
+  "status": "Failure",
+  "message": "pods is forbidden: User \"system:serviceaccount:foo:default\" cannot list resource \"pods\" in API group \"\" in the namespace \"foo\"",
+  "reason": "Forbidden",
+  "details": {
+    "kind": "pods"
+  },
+  "code": 403
+}/ # 
+
+## after bindings
+
+ k create clusterrolebinding view-test --clusterrole=view --serviceaccount=foo:default --dry-run=true -oyaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: null
+  name: view-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: foo
+
+### Works now ####
+
+kdel clusterrolebinding view-test
+clusterrolebinding.rbac.authorization.k8s.io "view-test" deleted
+
+~/DevStudy/yaml_files master !1 ?3                                            ○ kubia
+❯ k  create rolebinding view-test --clusterrole=view --serviceaccount=foo:default -n foo --dry-run=true -oyaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: null
+  name: view-test
+  namespace: foo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: default
+
+/ # curl localhost:8001/api/v1/namespaces/foo/pods | more
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{
+  "kind": "PodList",
+  "apiVersion": "v1",
+  "metadata": {
+    "selfLink": "/api/v1/namespaces/foo/pods",
+    "resourceVersion": "169918"
+  },
+
+###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
