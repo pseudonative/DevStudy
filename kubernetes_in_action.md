@@ -4224,6 +4224,7 @@ kg po --selector env=dev --no-headers | wc -l
 k taint no node01 spray=mortein:NoSchedule
 k explain pod --recursive | grep -A5 tolerations
 
+kg po --all-namespaces
 
 
 
