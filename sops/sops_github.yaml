@@ -11,14 +11,18 @@ example_booleans:
 ThisIsJeremyTest: ENC[AES256_GCM,data:PxlTY0VekoVR1Q4bGiXafG/X,iv:BhEnClOB42zLu2UFqaEX31idlTPiyK4idayNTUI6nPI=,tag:K/zXshrcIyP6niAZydIy0g==,type:str]
 is this jeremy:
     - ENC[AES256_GCM,data:MOUR3A==,iv:SK4D0KaDIgyauwdgslyYlRs1hR/WwRLGcbULIdB5YZc=,tag:azEOaa0wF7cuOneNMuvsKw==,type:bool]
+ThisIsJeremys2ndTest:
+    Test1:
+        Test2:
+            - ENC[AES256_GCM,data:yMTb+zM=,iv:LJSHwEGHM9HerWL00ZjcFevjQrRRYVHg7JfhNvxxovk=,tag:HU/hsLS4fw8sFO5liClVNQ==,type:bool]
 sops:
     kms: []
     gcp_kms: []
     azure_kv: []
     hc_vault: []
     age: []
-    lastmodified: "2021-04-12T18:40:21Z"
-    mac: ENC[AES256_GCM,data:kU+ZJkoOK/uZ7B1TSv5iOICFZfKo3AVQmhB3g4Gvs7j6AA1onj8OX6G2HyiVeWwRMWWZZPF5LCqrjufh691jFCp2XXE0r7kXIcBpNELW5Tm9N0vrBier4x/qgj2ixZiSA3pU8qSLerrMwHw4cEsrh2qBnllpFjj6n1QgLWcmgZU=,iv:8AY8KzzABnfxbJCcpPYDmM5MfbnpZWMZSR1422M/pAU=,tag:sTjnPoVALDOxF8rQnhUb5Q==,type:str]
+    lastmodified: "2021-04-12T18:43:05Z"
+    mac: ENC[AES256_GCM,data:jp2h7hQwZpXoNnsDpvgmQgKQacsmVJiQY/Gvi2KO1OToh1DfyEHSDGFr/nw4D+D9Qr5mdK9tuI0nfivv8Z+TViPLEbyRuJH+/FDRo9W66cVPVPnp24nhuBQfNQqV4v8uthPToAw/Jj2Fcy3uDQzm2/JyZ4jaAgajR9zSYreqzeM=,iv:YTdS88Of/P2EkM/gUEkV2FU0qWj/cVEyYoNsgz/MVjU=,tag:jiVXOc0nskKaWAdfhtpgaw==,type:str]
     pgp:
         - created_at: "2021-04-12T18:37:37Z"
           enc: |-
