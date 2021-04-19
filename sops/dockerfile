@@ -1,0 +1,10 @@
+FROM ubuntu
+
+WORKDIR /SOPS
+
+COPY . /SOPS
+
+RUN apt update -y && apt -y install gnupg2 && apt install -y wget && wget https://github.com/mozilla/sops/releases/download/v3.7.1/sops_3.7.1_amd64.deb && dpkg -i sops_3.7.1_amd64.deb && apt install -y sops && rm -f sops_3.7.1_amd64.deb && apt install -y vim && gpg --import new_secretkey.asc
+CMD export GPG_TTY=$(tty)
+CMD ./enc_decr.sh
+

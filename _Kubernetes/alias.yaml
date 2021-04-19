@@ -1,0 +1,10 @@
+
+alias k='kubectl'
+alias kg='kubectl get'
+alias kd='kubectl describe'
+alias kdel='kubectl delete'
+alias kap='kubectl apply -f'
+alias kns='kubectl get pods --all-namespaces'
+alias kall='kubectl get  all --all-namespaces'
+alias c='clear'
+c
